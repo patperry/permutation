@@ -1,0 +1,28 @@
+name:            permutation
+version:         0.1
+homepage:        http://stat.stanford.edu/~patperry/code/permutation
+synopsis:        Permutations and combinations
+description:
+    A library for representing and applying permutations and combinations
+    inspired by the GNU Scientific Library (GSL).
+    .
+category:        Math
+license:         BSD3
+license-file:    LICENSE
+copyright:       (c) 2008. Patrick Perry <patperry@stanford.edu>
+author:          Patrick Perry
+maintainer:      Patrick Perry <patperry@stanford.edu>
+cabal-version: >= 1.2.0
+build-type:      Custom
+tested-with:     GHC ==6.8.2
+
+extra-source-files: tests/Properties.hs
+                    tests/Impure.hs
+
+library
+    exposed-modules: Data.Permutation
+                     System.Random.Permutation
+
+    build-depends:   base, containers, random-gen, mtl
+
+    ghc-options:     -Wall
