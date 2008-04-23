@@ -3,8 +3,9 @@ version:         0.1
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        Permutations and combinations
 description:
-    A library for representing and applying permutations and combinations
-    inspired by the GNU Scientific Library (GSL).
+    A library for representing and applying permutations and combinations.
+    Also includes facility for generating random permutations and shuffles
+    using the GenT monad transformer from the random-gen library.
     .
 category:        Math
 license:         BSD3
@@ -16,8 +17,8 @@ cabal-version: >= 1.2.0
 build-type:      Custom
 tested-with:     GHC ==6.8.2
 
-extra-source-files: tests/Properties.hs
-                    tests/Impure.hs
+extra-source-files:  tests/Unit.hs
+                     tests/Makefile
 
 library
     exposed-modules: Data.Permutation

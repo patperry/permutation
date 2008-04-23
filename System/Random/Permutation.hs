@@ -44,7 +44,7 @@ shuffleWith swap n =
     
     step :: Monad m => (Int -> Int -> m ()) -> Int -> GenT m ()
     step swp i = do
-        i' <- unifInt (n-i-i) >>= return . (i+)
+        i' <- unifInt (n-i) >>= return . (i+)
         if i == i'
             then return ()
             else lift (swp i i')

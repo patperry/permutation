@@ -8,7 +8,9 @@ import Test.HUnit
 
 import Data.Permutation
 
-
+import System.Random.Gen ( evalGenT )
+import System.Random.RNG ( mt19937 )
+import qualified System.Random.Permutation as RP
 
 
 swapElems :: Storable a => Ptr a -> Int -> Int -> IO ()
@@ -187,6 +189,19 @@ testInvThenApply n = TestCase $ do
     
     assertEqual "" xs ys
 
+
+testShuffle :: Int -> Test
+testShuffle n = TestCase $ do
+    x <- newRandomArray n :: IO (Ptr Double)
+    y <- newArrayCopy n x
+    p <- flip evalGenT (mt19937 0) $ do
+            RP.shuffleWith (swapElems y) n
+
+    xs <- peekArray n x
+    ys <- peekArray n y
+
+    forM_ [0..(n-1)] $ \i ->
+        assertEqual ("position " ++ show i) (xs !! (apply p i)) (ys !! i)
  
 smallTests = [ TestLabel "identity"             testIdentity
              , TestLabel "small cycle"          testSmallCycle
@@ -208,6 +223,8 @@ main =
                                        (testApplyThenInv n)) ns
         iaTests = map (\n -> TestLabel ("inverse then apply (" ++ show n ++ ")") 
                                        (testInvThenApply n)) ns
-        tests   = TestList $ smallTests ++ aTests ++ aiTests ++ iaTests
+        sTests  = map (\n -> TestLabel ("shuffle (" ++ show n ++ ")") 
+                                       (testShuffle n)) ns
+        tests   = TestList $ smallTests ++ aTests ++ aiTests ++ iaTests ++ sTests
     in runTestTT tests
     
