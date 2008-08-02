@@ -1,4 +1,5 @@
-{-# OPTIONS -fglasgow-exts -cpp #-}
+{-# LANGUAGE CPP #-}
+{-# OPTIONS_GHC -fglasgow-exts #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Permutation
@@ -35,6 +36,7 @@ module Data.Permutation (
     fromList,
 
     -- * Unsafe operations
+    withPermutationPtr,
     unsafePermutation,
     unsafeApply,
     
@@ -63,45 +65,56 @@ inlinePerformIO = unsafePerformIO
 
 
 -- | Represents a permutation of the integers @[0..n)@.        
-data Permutation n =
-        Perm !Int              -- size
-             !(ForeignPtr Int) -- data
+data Permutation =
+        Perm {-# UNPACK #-} !Int             
+             {-# UNPACK #-} !(ForeignPtr Int)
+             {-# UNPACK #-} !Int
 
--- | Get the raw data array and size
-toForeignPtr :: Permutation n -> (Int, ForeignPtr Int)
-toForeignPtr (Perm n fptr) = (n, fptr)
+-- | Get the size, raw data array and offset
+toForeignPtr :: Permutation -> (Int, ForeignPtr Int, Int)
+toForeignPtr (Perm n f o) = (n, f, o)
 
--- | Convert and array and a size to a permutation.  No validation is
+-- | Convert size and raw array to a permutation.  No validation is
 -- performed on the arguments.
-fromForeignPtr :: Int -> ForeignPtr Int -> Permutation n
+fromForeignPtr :: Int -> ForeignPtr Int -> Int -> Permutation
 fromForeignPtr = Perm
 
--- | Gets the value of @n@.
-size :: Permutation n -> Int
-size (Perm n _) = n
+-- | Get the size of the permutation.
+size :: Permutation -> Int
+size (Perm n _ _) = n
+{-# INLINE size #-}
+
+-- | Perform an operation, given a pointer to the start of the
+-- permutation data
+withPermutationPtr :: Permutation -> (Ptr Int -> IO a) -> IO a
+withPermutationPtr (Perm _ fptr off) f =
+    withForeignPtr fptr $ \ptr ->
+        f (ptr `advancePtr` off)
 
 -- | Apply a permutation to an integer.  The integer must be in the range
 --   @[0..n)@.
-apply :: Permutation n -> Int -> Int
-apply p@(Perm n _) i 
+apply :: Permutation -> Int -> Int
+apply p@(Perm n _ _) i 
     | i < 0 || i >= n =
         error $ 
             "applyPerm: Tried to apply permutation of size `" ++ show n ++
             "' to the value `" ++ show i ++ "'."
     | otherwise =
         unsafeApply p i
+{-# INLINE apply #-}
 
 -- | Same as 'apply' but does not range-check the argument.
-unsafeApply :: Permutation n -> Int -> Int
-unsafeApply (Perm _ fptr) i =
+unsafeApply :: Permutation -> Int -> Int
+unsafeApply p i =
     inlinePerformIO $ do
-        withForeignPtr fptr $ flip peekElemOff i
+        withPermutationPtr p $ flip peekElemOff i
+{-# INLINE unsafeApply #-}
 
 -- | Create a permutation from a list of values.  The list must be of length
 --   @n@ and contain each integer in @{0, 1, ..., (n-1) }@ exactly once.
 --   The permutation that is returned will send the integer @i@ to its index
 --   in the list.
-permutation :: Int -> [Int] -> Permutation n
+permutation :: Int -> [Int] -> Permutation
 permutation n is = 
     let p = unsafePermutation n is
     in case isValid p of
@@ -109,33 +122,33 @@ permutation n is =
            True  -> p
 
 -- | Same as 'permutation', but does not check that the inputs are valid.
-unsafePermutation :: Int -> [Int] -> Permutation n
+unsafePermutation :: Int -> [Int] -> Permutation
 unsafePermutation n is = 
     unsafePerformIO $ do
         fptr <- mallocForeignPtrArray n
         withForeignPtr fptr $ \ptr -> pokeArray ptr is
-        return $ Perm n fptr
+        return $ fromForeignPtr n fptr 0
 {-# NOINLINE unsafePermutation #-}
 
 
-fromList :: [Int] -> Permutation n
+fromList :: [Int] -> Permutation
 fromList is = permutation (length is) is
 
-toList :: Permutation n -> [Int]
-toList (Perm n fptr) =
-    unsafePerformIO $ withForeignPtr fptr $ peekArray n
+toList :: Permutation -> [Int]
+toList p = unsafePerformIO $ 
+               withPermutationPtr p $ peekArray (size p)
 
 -- | Create an identity permutation of the given size.
-identity :: Int -> Permutation n
+identity :: Int -> Permutation
 identity n =
     unsafePerformIO $ do
         fptr <- mallocForeignPtrArray n
         withForeignPtr fptr $ \ptr -> pokeArray ptr [0..(n-1)]
-        return $ Perm n fptr
+        return $ fromForeignPtr n fptr 0
 
 
 -- | Get the inverse of a permutation.
-inverse :: Permutation n -> Permutation n
+inverse :: Permutation -> Permutation
 inverse p =
     let n = size p
     in
@@ -144,7 +157,7 @@ inverse p =
             withForeignPtr fptr $ \ptr -> do
                 pokeArray ptr [0..(n-1)]
                 invertWith (swap ptr) p
-            return $ Perm n fptr
+            return $ fromForeignPtr n fptr 0
     where
         swap :: Ptr Int -> Int -> Int -> IO ()
         swap ptr i j = do
@@ -157,40 +170,39 @@ inverse p =
 
 
 
-isValid :: Permutation n -> Bool
-isValid (Perm n fptr) =
-    unsafePerformIO $ 
-        withForeignPtr fptr $ \ptr -> do
+isValid :: Permutation -> Bool
+isValid p@(Perm n _ _) =
+    unsafePerformIO $
+        withPermutationPtr p $ \ptr -> do
             liftM and $
                 mapM (\i -> peekElemOff ptr i 
-                            >>= \p -> isValidI ptr p i)
+                            >>= \x -> isValidI ptr x i)
                      [0..(n-1)]
              
     where
         isValidI :: Ptr Int -> Int -> Int -> IO Bool
-        isValidI ptr p i =
+        isValidI ptr x i =
             liftM and $ 
-                sequence [ inRange p, isUnique p ptr i ]
+                sequence [ inRange x, isUnique x ptr i ]
     
         inRange :: Int -> IO Bool
-        inRange p =
-            return $ p >= 0 && p < n
+        inRange x =
+            return $ x >= 0 && x < n
         
         isUnique :: Int -> Ptr Int -> Int -> IO Bool
-        isUnique p ptr' n'
+        isUnique x ptr' n'
             | n' == 0 =
                 return True
             | otherwise = do
-                p' <- peek ptr'
-                if p' == p 
+                x' <- peek ptr'
+                if x' == x 
                     then return False
-                    else isUnique p (ptr' `advancePtr` 1) (n'-1)
+                    else isUnique x (ptr' `advancePtr` 1) (n'-1)
     
-
--- | @invertWith swap p@ applies the inverse of the permutation as a 
--- sequence of swaps.  After this function is applied, @OUT[i] = IN[P[i]]@
-invertWith :: (Monad m) => (Int -> Int -> m ()) -> Permutation n -> m ()
-invertWith swap p =
+-- | @applyWith swap perm@ applies the permutation as a sequence of swaps.  After 
+-- this function is applied, @OUT[i] = IN[P[i]]@
+applyWith :: (Monad m) => (Int -> Int -> m ()) -> Permutation -> m ()
+applyWith swap p =
     let n = size p
     in foldM (flip $ doCycle swap) IntSet.empty [0..(n-1)] >> return ()
     
@@ -216,10 +228,10 @@ invertWith swap p =
                     swp cur next
                     doCycle' swp start next next' visited'
 
--- | @applyWith swap perm@ applies the permutation as a sequence of swaps.  After 
--- this function is applied, @OUT[P[i]] = IN[i]@
-applyWith :: (Monad m) => (Int -> Int -> m ()) -> Permutation n -> m ()
-applyWith swap p =
+-- | @invertWith swap p@ applies the inverse of the permutation as a 
+-- sequence of swaps.  After this function is applied, @OUT[P[i]] = IN[i]@
+invertWith :: (Monad m) => (Int -> Int -> m ()) -> Permutation -> m ()
+invertWith swap p =
     let n = size p
     in foldM (flip $ doCycle swap) IntSet.empty [0..(n-1)] >> return ()
     
@@ -243,4 +255,11 @@ applyWith swap p =
                 in do
                     swp start cur
                     doCycle' swp start cur' visited'
+
+
+instance Show Permutation where
+    show p = "permutation "     ++ show (size p) ++ " " ++ show (toList p)
+    
+instance Eq Permutation where
+    (==) p q = (size p == size q) && (toList p == toList q)
     

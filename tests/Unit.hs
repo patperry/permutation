@@ -8,9 +8,6 @@ import Test.HUnit
 
 import Data.Permutation
 
-import System.Random.Gen ( evalGenT )
-import System.Random.RNG ( mt19937 )
-import qualified System.Random.Permutation as RP
 
 
 swapElems :: Storable a => Ptr a -> Int -> Int -> IO ()
@@ -31,7 +28,7 @@ newArrayCopy n x = do
     copyArray y x n
     return y
 
-newRandomPerm :: Int -> IO (Permutation n)
+newRandomPerm :: Int -> IO (Permutation)
 newRandomPerm n = do
     xs <- sequence $ replicate n randomIO :: IO [Int]
     let ixs  = zip [0..] xs
@@ -68,7 +65,7 @@ testSmallCycle = TestCase $ do
     
     xs <- peekArray n x
     assertEqual ""
-        [ 7, 8, 6 ]
+        [ 8, 6, 7 ]        
         xs
 
 testSmallCycleInv :: Test
@@ -81,7 +78,7 @@ testSmallCycleInv = TestCase $ do
     
     xs <- peekArray n x
     assertEqual ""
-        [ 8, 6, 7 ]
+        [ 7, 8, 6 ]
         xs
 
 
@@ -95,7 +92,7 @@ testSingleCycleInv = TestCase $ do
     
     xs <- peekArray n x
     assertEqual ""
-        [ -0.413, 0.237, 0.382, 0.037, 0.818 ]
+        [ 0.382, 0.818, 0.037, 0.237, -0.413 ]
         xs
 
 testSingleCycle :: Test
@@ -108,7 +105,7 @@ testSingleCycle = TestCase $ do
     
     xs <- peekArray n x
     assertEqual ""
-        [ 0.382, 0.818, 0.037, 0.237, -0.413 ]
+        [ -0.413, 0.237, 0.382, 0.037, 0.818 ]
         xs
         
 testMultiCycleInv :: Test
@@ -121,7 +118,7 @@ testMultiCycleInv = TestCase $ do
     
     xs <- peekArray n x
     assertEqual ""
-        [ 0.818, -0.413, 0.237, 0.037, 0.382 ]
+        [ 0.818, 0.037, 0.237, 0.382, -0.413 ]
         xs
 
 testMultiCycle :: Test
@@ -133,7 +130,7 @@ testMultiCycle = TestCase $ do
     
     xs <- peekArray n x
     assertEqual ""
-        [ 0.818, 0.037, 0.237, 0.382, -0.413 ]
+        [ 0.818, -0.413, 0.237, 0.037, 0.382 ]
         xs
 
 testApply :: Int -> Test
@@ -147,7 +144,7 @@ testApply n = TestCase $ do
     ys <- peekArray n y
 
     forM_ [0..(n-1)] $ \i ->
-        assertEqual ("position " ++ show i) (xs !! i) (ys !! (apply p i))
+        assertEqual ("position " ++ show i) (xs !! (apply p i)) (ys !! i)
 
 testInvert :: Int -> Test
 testInvert n = TestCase $ do
@@ -160,7 +157,7 @@ testInvert n = TestCase $ do
     ys <- peekArray n y
 
     forM_ [0..(n-1)] $ \i ->
-        assertEqual ("position " ++ show i) (xs !! (apply p i)) (ys !! i)
+        assertEqual ("position " ++ show i) (xs !! i) (ys !! (apply p i))
 
 
 testApplyThenInv :: Int -> Test
@@ -190,18 +187,7 @@ testInvThenApply n = TestCase $ do
     assertEqual "" xs ys
 
 
-testShuffle :: Int -> Test
-testShuffle n = TestCase $ do
-    x <- newRandomArray n :: IO (Ptr Double)
-    y <- newArrayCopy n x
-    p <- flip evalGenT (mt19937 0) $ do
-            RP.shuffleWith (swapElems y) n
 
-    xs <- peekArray n x
-    ys <- peekArray n y
-
-    forM_ [0..(n-1)] $ \i ->
-        assertEqual ("position " ++ show i) (xs !! (apply p i)) (ys !! i)
  
 smallTests = [ TestLabel "identity"             testIdentity
              , TestLabel "small cycle"          testSmallCycle
@@ -223,8 +209,6 @@ main =
                                        (testApplyThenInv n)) ns
         iaTests = map (\n -> TestLabel ("inverse then apply (" ++ show n ++ ")") 
                                        (testInvThenApply n)) ns
-        sTests  = map (\n -> TestLabel ("shuffle (" ++ show n ++ ")") 
-                                       (testShuffle n)) ns
-        tests   = TestList $ smallTests ++ aTests ++ aiTests ++ iaTests ++ sTests
+        tests   = TestList $ smallTests ++ aTests ++ aiTests ++ iaTests
     in runTestTT tests
     

@@ -3,9 +3,7 @@ version:         0.1
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        Permutations and combinations
 description:
-    A library for representing and applying permutations and combinations.
-    Also includes facility for generating random permutations and shuffles
-    using the GenT monad transformer from the random-gen library.
+    A library for representing and permutations.
     .
 category:        Math
 license:         BSD3
@@ -22,8 +20,7 @@ extra-source-files:  tests/Unit.hs
 
 library
     exposed-modules: Data.Permutation
-                     System.Random.Permutation
 
-    build-depends:   base, containers, random-gen, mtl
+    build-depends:   base, containers
 
     ghc-options:     -Wall
