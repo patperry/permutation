@@ -3,7 +3,7 @@ version:         0.1
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        Permutations and combinations
 description:
-    A library for representing and permutations.
+    A library for representing and applying permutations.
     .
 category:        Math
 license:         BSD3
