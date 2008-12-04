@@ -10,5 +10,5 @@
 >         then ioError $ userError $ "failed"
 >         else return ()
 >
-> main = defaultMainWithHooks defaultUserHooks
+> main = defaultMainWithHooks simpleUserHooks
 >        {runTests=testing}
