@@ -32,13 +32,26 @@ prop_GetElems = getElems `implements` getElems_S
 getElems'_S p = (elems p, p)
 prop_GetElems' = getElems' `implements` getElems'_S
 
+swapElems_S p i j = ((), p')
+  where
+    (n,is) = (size p, elems p)
+      
+    at k | k == i    = is !! j
+         | k == j    = is !! i
+         | otherwise = is !! k
+    p'   = listPermute n $ map at [0..(n-1)]
 
-
+prop_SwapElems (Swap n i j) =
+    implementsFor n
+        (\p -> swapElems p i j) 
+        (\p -> swapElems_S p i j)
+      
 tests_STPermute = 
     [ ("newPermute"     , mytest prop_NewPermute)
     , ("newListPermute" , mytest prop_NewListPermute)
     , ("getElems"       , mytest prop_GetElems)
     , ("getElems'"      , mytest prop_GetElems')
+    , ("swapElems"      , mytest prop_SwapElems)
     ]
 
 

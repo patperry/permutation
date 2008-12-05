@@ -11,6 +11,7 @@ module Driver (
     Natural(..),
     Index(..),
     ListPermute(..),
+    Swap(..),
     
     mytest,
     mycheck,
@@ -64,6 +65,15 @@ instance Arbitrary ListPermute where
         xs <- vector n :: Gen [Int]
         return . ListPermute n $ 
             (snd . unzip) $ sortBy (comparing fst) $ zip xs [0..]
+
+    coarbitrary = undefined
+
+data Swap = Swap Int Int Int deriving (Eq,Show)
+instance Arbitrary Swap where
+    arbitrary = do
+        (Index n i) <- arbitrary
+        j <- choose (0,n-1)
+        return $ Swap n i j
 
     coarbitrary = undefined
 
