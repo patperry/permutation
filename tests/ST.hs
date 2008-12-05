@@ -26,6 +26,10 @@ newListPermute_S n is = listPermute n is
 prop_NewListPermute (ListPermute n is) =
     newListPermute n is `equivalent` newListPermute_S n is
 
+copyPermute_S p q = ((), q, q)
+prop_CopyPermute =
+    copyPermute `implements2` copyPermute_S
+
 setIdentity_S p = ((), permute (size p))
 prop_SetIdentity =
     setIdentity `implements` setIdentity_S 
@@ -72,6 +76,7 @@ prop_GetElems' = getElems' `implements` getElems'_S
 tests_STPermute = 
     [ ("newPermute"     , mytest prop_NewPermute)
     , ("newListPermute" , mytest prop_NewListPermute)
+    , ("copyPermute"    , mytest prop_CopyPermute)
     , ("setIdentity"    , mytest prop_SetIdentity)
     , ("getElem"        , mytest prop_GetElem)
     , ("unsafeGetElem"  , mytest prop_UnsafeGetElem)
