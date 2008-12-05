@@ -3,9 +3,10 @@ module Pure (
     tests_Permute
     ) where
     
+import Control.Monad.ST
 import Data.List( foldl' )
 import Data.Permute
-
+import Data.Array.ST
 
 import Driver
 import Test.QuickCheck
@@ -42,6 +43,18 @@ prop_apply_help a =
     forAll (Test.permute n) $ \p ->
         a p i == (elems p) !! i
 
+prop_swaps (Nat n) =
+    forAll (Test.permute n) $ \p ->
+    forAll (vector n) $ \xs ->
+        let xs' = applySwaps (swaps p) xs
+        in all (\i -> xs' !! i == xs !! (apply p i)) [0..(n-1)]
+
+prop_invSwaps (Nat n) =
+    forAll (Test.permute n) $ \p ->
+    forAll (vector n) $ \xs ->
+        let xs' = applySwaps (invSwaps p) xs
+        in all (\i -> xs' !! (apply p i) == xs !! i) [0..(n-1)]
+    
 
 tests_Permute = 
     [ ("size . permute"          , mytest prop_size_permute)
@@ -52,4 +65,20 @@ tests_Permute =
     , ("elems . invSwapsPermute" , mytest prop_elems_invSwapsPermute)
     , ("apply"                   , mytest prop_apply)
     , ("unsafeApply"             , mytest prop_unsafeApply)
+    , ("swaps"                   , mytest prop_swaps)
+    , ("invSwaps"                , mytest prop_invSwaps)
     ]
+
+
+applySwaps :: [(Int,Int)] -> [Int] -> [Int]
+applySwaps ss xs = runST $ do
+    arr <- newListArray (0,length xs - 1) xs :: ST s (STUArray s Int Int) 
+    mapM_ (swap arr) ss
+    getElems arr
+  where
+    swap arr (i,j) = do
+        i' <- readArray arr i
+        j' <- readArray arr j
+        writeArray arr j i'
+        writeArray arr i j'
+
