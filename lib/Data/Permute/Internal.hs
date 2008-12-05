@@ -384,7 +384,7 @@ getSwapsHelp inv p = do
             if least 
                 then do
                     i' <- unsafeGetElem p i
-                    doCycle i i i'
+                    unsafeInterleaveM $ doCycle i i i'
                 else
                     return []
         
