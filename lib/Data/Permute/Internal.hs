@@ -465,11 +465,9 @@ getSwapsHelp inv p = do
 -- | Convert a mutable permutation to an immutable one.
 freeze :: (MPermute p m) => p -> m Permute
 freeze = freezeHelp freezePermuteArray
-{-# INLINE freeze #-}
 
 unsafeFreeze :: (MPermute p m) => p -> m Permute
 unsafeFreeze = freezeHelp unsafeFreezePermuteArray
-{-# INLINE unsafeFreeze #-}
 
 freezeHelp :: (MPermute p m) => (PermuteData p -> m (UArray Int Int))
            -> p -> m Permute
@@ -478,16 +476,13 @@ freezeHelp f = liftM Permute . f . toData
 -- | Convert an immutable permutation to a mutable one.
 thaw :: (MPermute p m) => Permute -> m p
 thaw = thawHelp thawPermuteArray
-{-# INLINE thaw #-}
 
 unsafeThaw :: (MPermute p m) => Permute -> m p
 unsafeThaw = thawHelp unsafeThawPermuteArray
-{-# INLINE unsafeThaw #-}
 
 thawHelp :: (MPermute p m) => (UArray Int Int -> m (PermuteData p))
            -> Permute -> m p
-thawHelp t (Permute p) =
-    liftM fromData $ t p
+thawHelp t (Permute p) = liftM fromData $ t p
 
 
 --------------------------------- Instances ---------------------------------
