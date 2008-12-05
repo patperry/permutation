@@ -220,7 +220,6 @@ swapElems p i j = do
     unsafeWrite arr j i'
   where
     arr = toData p
-{-# INLINE swapPermute #-}
 
 -- | Get the size of a permutation.
 getSize :: (MPermute p m) => p -> m Int
