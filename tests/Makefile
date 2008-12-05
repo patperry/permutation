@@ -4,6 +4,7 @@ all:
 
 hpc:
 	ghc -fforce-recomp -i. -i../lib -fhpc --make Main.hs -o test-permute
+	rm -f test-permute.tix
 	./test-permute
 	hpc markup test-permute
 
