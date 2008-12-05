@@ -183,7 +183,10 @@ newListPermute n is =
 -- @i1 \<-> j1@, and so on until
 -- @ik \<-> jk@.
 newSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-newSwapsPermute = undefined
+newSwapsPermute n ss = do
+    p <- newPermute n
+    mapM_ (uncurry $ swapElems p) ss
+    return p
 
 -- | Construct a new permutation by copying another.
 newCopyPermute :: (MPermute p m) => p -> m p
