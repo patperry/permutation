@@ -197,7 +197,12 @@ copyPermute = undefined
 
 -- | Set a permutation to the identity.
 setIdentity :: (MPermute p m) => p -> m ()
-setIdentity = undefined
+setIdentity p = do
+    n <- getSize p
+    forM_ [0..(n-1)] $ \i ->
+        unsafeWrite arr i i
+  where
+    arr = toData p
 
 -- | @getElem p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
