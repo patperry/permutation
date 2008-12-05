@@ -541,11 +541,13 @@ freeze = freezeHelp newCopyArray
 
 unsafeFreeze :: (MPermute p m) => p -> m Permute
 unsafeFreeze = freezeHelp return
+{-# INLINE unsafeFreeze #-}
 
 freezeHelp :: (MPermute p m) => (PermuteData -> IO PermuteData)
            -> p -> m Permute
 freezeHelp f p = unsafeIOToM $
     (liftM Permute . f . toData) p
+{-# INLINE freezeHelp #-}
 
 -- | Convert an immutable permutation to a mutable one.
 thaw :: (MPermute p m) => Permute -> m p
@@ -553,11 +555,12 @@ thaw = thawHelp newCopyArray
 
 unsafeThaw :: (MPermute p m) => Permute -> m p
 unsafeThaw = thawHelp return
+{-# INLINE unsafeThaw #-}
 
 thawHelp :: (MPermute p m) => (PermuteData -> IO PermuteData)
            -> Permute -> m p
 thawHelp t (Permute p) = unsafeIOToM $ liftM fromData $ t p
-
+{-# INLINE thawHelp #-}
 
 --------------------------------- Instances ---------------------------------
 
