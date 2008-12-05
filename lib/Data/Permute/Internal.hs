@@ -16,7 +16,7 @@ import Control.Monad
 import Control.Monad.ST
 
 import Data.Array.Base ( unsafeAt, unsafeRead, unsafeWrite, freezeSTUArray,
-    unsafeFreezeSTUArray, thawSTUArray, unsafeThawSTUArray )
+    unsafeFreezeSTUArray, thawSTUArray, unsafeThawSTUArray, getNumElements )
 import Data.Array.MArray ( MArray )
 import qualified Data.Array.MArray as MArray
 -- import Data.Array.IO ( IOUArray )
@@ -291,7 +291,7 @@ swapElemsHelp readArr writeArr p i j
 
 -- | Get the size of a permutation.
 getSize :: (MPermute p m) => p -> m Int
-getSize p = liftM ((1+) . snd) $ MArray.getBounds (toData p)
+getSize p = getNumElements (toData p)
 {-# INLINE getSize #-}
 
 -- | Get a lazy list of the permutation elements.  The laziness makes this
