@@ -493,16 +493,16 @@ setNextBy lt p = unsafeIOToM $ do
   where
     n   = inlineGetSize p
     arr = toData p
-    i `gt` j = {-# SCC "gt" #-} not (i `lt` j)
+    i `gt` j = not (i `lt` j)
     
-    findLastAscent i = {-# SCC "findLastAscent" #-} do
+    findLastAscent i = do
         ascent <- isAscent i
         if ascent then return (Just i) else recurse
       where
         recurse = if i /= 0 then findLastAscent (i-1) else return Nothing 
     
     findSmallestLargerThan i' j k k'
-        | j < n = {-# SCC "findSmallestLargerThan" #-} do
+        | j < n = do
             j' <- unsafeRead arr j
             if j' `gt` i' && j' `lt` k'
                 then findSmallestLargerThan i' (j+1) j j'
@@ -510,7 +510,7 @@ setNextBy lt p = unsafeIOToM $ do
         | otherwise =
             return (k,k')
             
-    isAscent i = {-# SCC "isAscent" #-} liftM2 lt (unsafeRead arr i) (unsafeRead arr (i+1))
+    isAscent i = liftM2 lt (unsafeRead arr i) (unsafeRead arr (i+1))
 {-# INLINE setNextBy #-}
 
     
