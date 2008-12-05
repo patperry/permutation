@@ -313,17 +313,29 @@ isValid p = do
             as <- unsafeInterleaveM $ validIndicesHelp n (i+1)
             return (a:as)
 
-
 -- | Compute the inverse of a permutation.  
-getInverse :: (MPermute p m, MPermute pi m) => p -> m pi
-getInverse = undefined
+getInverse :: (MPermute p m) => p -> m p
+getInverse p = do
+    n <- getSize p
+    q <- newPermute_ n
+    copyInverse q p
+    return q
 
 -- | Set one permutation to be the inverse of another.  
 -- @copyInverse inv p@ computes the inverse of @p@ and stores it in @inv@.
 -- The two permutations must have the same size.
-copyInverse :: (MPermute pi m, MPermute p m) => pi -> p -> m ()
-copyInverse = undefined
-
+copyInverse :: (MPermute p m) => p -> p -> m ()
+copyInverse q p = do
+    n  <- getSize p
+    n' <- getSize q
+    when (n /= n') $ fail "permutation size mismatch"
+    forM_ [0..(n-1)] $ \i -> do
+        i' <- unsafeRead src i
+        unsafeWrite dst i' i
+  where
+    src = toData p
+    dst = toData q
+        
 -- | Advance a permutation to the next permutation in lexicogrphic order and
 -- return @True@.  If no further permutaitons are available, return @False@ and
 -- leave the permutation unmodified.  Starting with the idendity permutation 
