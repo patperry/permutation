@@ -32,7 +32,7 @@ library
     other-modules:   Data.Permute.Internal
 
     build-depends:   base, containers, array, QuickCheck < 2
-    extensions:      MultiParamTypeClasses, TypeFamilies, FlexibleContexts,
-                     Rank2Types
+    extensions:      MultiParamTypeClasses, TypeFamilies, 
+                     FunctionalDependencies, FlexibleContexts, Rank2Types
 
     ghc-options:     -Wall

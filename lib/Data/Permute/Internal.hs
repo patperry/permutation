@@ -1,4 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses, TypeFamilies, FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeFamilies, 
+        FlexibleContexts #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Permute.Internal
@@ -114,7 +115,8 @@ type PermuteData p = PermuteArray p Int Int
 -- | Class for representing a mutable permutation.  The type is parameterized
 -- over the type of the monad, @m@, in which the mutable permutation will be
 -- manipulated.
-class (HasPermuteArray p, MArray (PermuteArray p) Int m) => MPermute p m where
+class (HasPermuteArray p, MArray (PermuteArray p) Int m) 
+    => MPermute p m | p -> m where
     
     -- | Allocate a new permutation but do not initialize it.
     newPermute_ :: Int -> m p
