@@ -45,7 +45,9 @@ module Data.Permute.MPermute (
     
     -- * Applying permutations
     getSwaps,
+    getSwaps',
     getInvSwaps,
+    getInvSwaps',
     
     -- * Converstions between mutable and immutable permutations
     freeze,

@@ -105,17 +105,15 @@ nextPrevHelp set p = runST $ do
             then liftM Just $ unsafeFreeze p'
             else return Nothing
 
--- | Get a list of swaps equivalent to the permutation.  The returned list will
--- have length equal to the size of the permutation.  A result of
--- @[ i0, i1, ..., in1 ]@ means swap @0 <-> i0@, then @1 <-> i1@, and so on
--- until @(n-1) <-> in1@.
-swaps :: Permute -> [Int]
+-- | Get a list of swaps equivalent to the permutation.  A result of
+-- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
+-- then @i1 <-> j1@, and so on until @ik <-> jk@.
+swaps :: Permute -> [(Int,Int)]
 swaps p = runST $
     getSwaps =<< unsafeThaw p
 
--- | Get a list of swaps equivalent to the inverse of permutation.  The 
--- returned list will have length equal to the size of the permutation.
-invSwaps :: Permute -> [Int]
+-- | Get a list of swaps equivalent to the inverse of permutation.
+invSwaps :: Permute -> [(Int,Int)]
 invSwaps p = runST $
     getInvSwaps =<< unsafeThaw p
 
@@ -340,17 +338,61 @@ setNext = undefined
 setPrev :: (MPermute p m) => p -> m Bool
 setPrev = undefined
 
--- | Get a list of swaps equivalent to the permutation.  The returned list will
--- have length equal to the size of the permutation.  A result of
--- @[ i0, i1, ..., in1 ]@ means swap @0 <-> i0@, then @1 <-> i1@, and so on
--- until @(n-1) <-> in1@.
-getSwaps :: (MPermute p m) => p -> m [Int]
-getSwaps = undefined
+-- | Get a lazy list of swaps equivalent to the permutation.  A result of
+-- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
+-- then @i1 <-> j1@, and so on until @ik <-> jk@.  The laziness makes this
+-- function slightly dangerous if you are modifying the permutation.  See also
+-- 'getSwaps\''.
+getSwaps :: (MPermute p m) => p -> m [(Int,Int)]
+getSwaps = getSwapsHelp False
 
--- | Get a list of swaps equivalent to the inverse of permutation.  The 
--- returned list will have length equal to the size of the permutation.
-getInvSwaps :: (MPermute p m) => p -> m [Int]
-getInvSwaps = undefined
+-- | Get a strict list of swaps equivalent to a permutation.
+getSwaps' :: (MPermute p m) => p -> m [(Int,Int)]
+getSwaps' p = do
+    ss <- getSwaps p
+    return $ (length ss) `seq` ss
+
+-- | Get a lazy list of swaps equivalent to the inverse of a permutation.
+getInvSwaps :: (MPermute p m) => p -> m [(Int,Int)]
+getInvSwaps = getSwapsHelp True
+
+-- | Get a strict list of swaps equivalent to the inverse of a permutation.
+getInvSwaps' :: (MPermute p m) => p -> m [(Int,Int)]
+getInvSwaps' p = do
+    ss <- getInvSwaps p
+    return $ (length ss) `seq` ss
+
+getSwapsHelp :: (MPermute p m) => Bool -> p -> m [(Int,Int)]
+getSwapsHelp inv p = do
+    n <- getSize p
+    liftM concat $
+        forM [0..(n-1)] $ \i -> do
+            k <- unsafeGetElem p i
+            least <- isLeast i k
+            if least 
+                then do
+                    i' <- unsafeGetElem p i
+                    doCycle i i i'
+                else
+                    return []
+        
+  where
+    isLeast i k 
+        | k > i = do
+            k' <- unsafeGetElem p k
+            isLeast i k'
+        | k < i     = return False
+        | otherwise = return True
+        
+    doCycle start i i'
+        | i' == start = return []
+        | otherwise = do
+            i'' <- unsafeGetElem p i'
+            let s = if inv then (start,i') else (i,i')
+            ss <- unsafeInterleaveM $ doCycle start i' i''
+            return (s:ss)
+        
+
 
 -- | Convert a mutable permutation to an immutable one.
 freeze :: (MPermute p m) => p -> m Permute
