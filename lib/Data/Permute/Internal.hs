@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeFamilies, 
-        FlexibleContexts #-}
+        FlexibleContexts, Rank2Types #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Permute.Internal
@@ -17,6 +17,7 @@ import Control.Monad.ST
 
 import Data.Array.Base( unsafeAt )
 import Data.Array.MArray hiding ( unsafeFreeze, thaw, unsafeThaw )
+import qualified Data.Array.MArray as MArray
 import Data.Array.IO ( IOUArray )
 import Data.Array.ST ( STUArray )
 import Data.Array.Unboxed hiding ( elems )
@@ -29,6 +30,11 @@ import qualified Data.Array.Unboxed as Array
 -- | The immutable permutation data type.
 newtype Permute = Permute (UArray Int Int)
 
+-- | Construct an identity permutation of the given size.
+permute :: Int -> Permute
+permute n = runST $
+    unsafeFreeze =<< newPermute n
+
 -- | Construct a permutation from a list of elements.  
 -- @listPermute n is@ creates a permuation of size @n@ with
 -- the @i@th element equal to @is !! i@.  For the permutation to be valid,
@@ -39,7 +45,7 @@ listPermute n is = runST $ do
     p <- newListPermute n is
     valid <- isValid p
     when (not valid) $ fail "invalid permutation"
-    return (unsafeFreeze p)
+    unsafeFreeze p
 
 -- | Construct a permutation from a list of swaps.
 -- @swapsPermute n ss@ creats a permuation of size @n@ from the sequence
@@ -50,12 +56,7 @@ listPermute n is = runST $ do
 -- @ik \<-> jk@.
 swapsPermute :: Int -> [(Int,Int)] -> Permute
 swapsPermute n ss = runST $
-    liftM unsafeFreeze $ newSwapsPermute n ss
-
--- | Construct an identity permutation of th given size.
-identity :: Int -> Permute
-identity n = runST $
-    liftM unsafeFreeze $ newPermute n
+    unsafeFreeze =<< newSwapsPermute n ss
 
 -- | @apply p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
@@ -79,7 +80,7 @@ elems (Permute a) = Array.elems a
 -- | Get the inverse of a permutation
 inverse :: Permute -> Permute
 inverse p = runST $ 
-    liftM unsafeFreeze $ getInverse (unsafeThaw p)
+    unsafeFreeze =<< getInverse =<< unsafeThaw p
 
 -- | Return the next permutation in lexicographic order, or @Nothing@ if
 -- there are no further permutations.  Starting with the identity permutation
@@ -97,10 +98,10 @@ nextPrevHelp :: (forall s. STPermute s -> ST s Bool)
              -> Permute -> Maybe Permute
 nextPrevHelp set p = runST $ do
     p' <- thaw p
-    set p' >>= \valid -> return $
+    set p' >>= \valid ->
         if valid
-            then Just $ unsafeFreeze p'
-            else Nothing
+            then liftM Just $ unsafeFreeze p'
+            else return Nothing
 
 -- | Get a list of swaps equivalent to the permutation.  The returned list will
 -- have length equal to the size of the permutation.  A result of
@@ -108,13 +109,13 @@ nextPrevHelp set p = runST $ do
 -- until @(n-1) <-> in1@.
 swaps :: Permute -> [Int]
 swaps p = runST $
-    getSwaps (unsafeThaw p)
+    getSwaps =<< unsafeThaw p
 
 -- | Get a list of swaps equivalent to the inverse of permutation.  The 
 -- returned list will have length equal to the size of the permutation.
 invSwaps :: Permute -> [Int]
 invSwaps p = runST $
-    getInvSwaps (unsafeThaw p)
+    getInvSwaps =<< unsafeThaw p
 
 
 instance Show Permute where
@@ -272,14 +273,15 @@ getInvSwaps = undefined
 freeze :: (MPermute p m) => p -> m Permute
 freeze = undefined
 
-unsafeFreeze :: (MPermute p m) => p -> Permute
-unsafeFreeze = undefined
+unsafeFreeze :: (MPermute p m) => p -> m Permute
+unsafeFreeze p = 
+    liftM Permute $ MArray.unsafeFreeze $ toData p
 
 -- | Convert an immutable permutation to a mutable one
 thaw :: (MPermute p m) => Permute -> m p
 thaw = undefined
 
-unsafeThaw :: (MPermute p m) => Permute -> p
+unsafeThaw :: (MPermute p m) => Permute -> m p
 unsafeThaw = undefined
 
 

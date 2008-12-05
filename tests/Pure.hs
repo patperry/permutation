@@ -4,13 +4,19 @@ module Pure (
     
 import Data.Permute
 
+
+import Driver
+import Test.QuickCheck
+    
 import Test.Permute()
 import qualified Test.Permute as Test
 
-import Driver
 
-prop_dummy = True
+prop_elems_permute =
+    forAll arbitrary $ \(Nat n) ->
+        elems (permute n) == [0..(n-1)]
+
 
 tests_Permute = 
-    [ ("dummy", mytest prop_dummy)
+    [ ("elems . permute", mytest prop_elems_permute)
     ]

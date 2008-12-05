@@ -13,9 +13,9 @@ module Data.Permute (
     Permute,
     
     -- * Creating permutations
+    permute,
     listPermute,
     swapsPermute,
-    identity,
 
     -- * Accessing permutation elements
     apply,

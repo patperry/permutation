@@ -19,13 +19,13 @@ import Test.Permute()
 import qualified Test.Permute as Test
 
 
-
 prop_dummy = True
 
 
 tests_STPermute = 
     [ ("dummy", mytest prop_dummy)
     ]
+
 
 ------------------------------------------------------------------------
 -- 
@@ -76,7 +76,8 @@ implementsFor :: (Eq a, Show a) =>
 implementsFor n a f =
     forAll (Test.permute n) $ \p ->
         runST $ do
-            commutes (unsafeThaw p) a f
+            p' <- unsafeThaw p
+            commutes p' a f
 
 implementsIf :: (Eq a, Show a) =>
     (forall s . STPermute s -> ST s Bool) ->
@@ -89,4 +90,5 @@ implementsIf pre a f =
             p' <- thaw p
             pre p') ==>
         runST ( do
-            commutes (unsafeThaw p) a f )
+            p' <- unsafeThaw p
+            commutes p' a f )
