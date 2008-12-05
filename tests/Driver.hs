@@ -10,6 +10,7 @@
 module Driver (
     Natural(..),
     Index(..),
+    ListPerm(..),
     
     mytest,
     mycheck,
@@ -34,7 +35,7 @@ import Debug.Trace
 import System.IO
 import System.Random
 
-import Test.QuickCheck hiding ( vector )
+import Test.QuickCheck
 
 import Text.Printf
 import Text.Show.Functions
@@ -44,7 +45,7 @@ instance Arbitrary Natural where
     arbitrary = do
         n <- arbitrary
         return $ Nat (abs n)
-        
+    
     coarbitrary = undefined
 
 data Index = Index Int Int deriving (Eq,Show)
@@ -53,7 +54,17 @@ instance Arbitrary Index where
         n <- arbitrary
         i <- choose (0, abs n)
         return $ Index i (abs n + 1)
-        
+
+    coarbitrary = undefined
+
+data ListPerm = ListPerm Int [Int] deriving (Eq,Show)
+instance Arbitrary ListPerm where
+    arbitrary = do
+        (Nat n) <- arbitrary
+        xs <- vector n :: Gen [Int]
+        return . ListPerm n $ 
+            (snd . unzip) $ sortBy (comparing fst) $ zip xs [0..]
+
     coarbitrary = undefined
 
 ------------------------------------------------------------------------
