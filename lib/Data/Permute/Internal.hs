@@ -116,7 +116,7 @@ type PermuteData p = PermuteArray p Int Int
 -- over the type of the monad, @m@, in which the mutable permutation will be
 -- manipulated.
 class (HasPermuteArray p, MArray (PermuteArray p) Int m) 
-    => MPermute p m | p -> m where
+    => MPermute p m | p -> m, m -> p where
     
     -- | Allocate a new permutation but do not initialize it.
     newPermute_ :: Int -> m p
