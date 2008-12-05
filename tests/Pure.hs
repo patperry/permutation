@@ -28,7 +28,7 @@ prop_elems_listPermute (ListPermute n is) =
 prop_apply       = prop_apply_help apply
 prop_unsafeApply = prop_apply_help unsafeApply
 prop_apply_help a =
-    forAll arbitrary $ \(Index i n) ->
+    forAll arbitrary $ \(Index n i) ->
     forAll (Test.permute n) $ \p ->
         a p i == (elems p) !! i
 

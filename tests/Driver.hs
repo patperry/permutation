@@ -53,7 +53,7 @@ instance Arbitrary Index where
     arbitrary = do
         n <- arbitrary
         i <- choose (0, abs n)
-        return $ Index i (abs n + 1)
+        return $ Index (abs n + 1) i
 
     coarbitrary = undefined
 
