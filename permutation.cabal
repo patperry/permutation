@@ -15,18 +15,23 @@ cabal-version: >= 1.2.0
 build-type:      Custom
 tested-with:     GHC ==6.8.2
 
-extra-source-files:  tests/Unit.hs
+extra-source-files:  tests/Driver.hs
+                     tests/Main.hs
+                     tests/Pure.hs
+                     tests/ST.hs
                      tests/Makefile
 
 library
+    hs-source-dirs:  lib
     exposed-modules: Data.Permute
                      Data.Permute.MPermute
                      Data.Permute.IO
                      Data.Permute.ST
+                     Test.Permute
                      
     other-modules:   Data.Permute.Internal
 
-    build-depends:   base, containers, array
+    build-depends:   base, containers, array, QuickCheck < 2
     extensions:      MultiParamTypeClasses, TypeFamilies, FlexibleContexts,
                      Rank2Types
 

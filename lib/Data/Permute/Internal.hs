@@ -16,7 +16,7 @@ import Control.Monad.ST
 
 import Data.Array.IO
 import Data.Array.ST
-import Data.Array.Unboxed
+import Data.Array.Unboxed hiding ( elems )
 
 
 
@@ -88,6 +88,13 @@ swaps = undefined
 -- returned list will have length equal to the size of the permutation.
 invSwaps :: Permute -> [Int]
 invSwaps = undefined
+
+
+instance Show Permute where
+    show p = "listPermute " ++ show (size p) ++ " " ++ show (elems p)
+    
+instance Eq Permute where
+    (==) p q = (size p == size q) && (elems p == elems q)
 
 
 --------------------------------- MPermute --------------------------------
