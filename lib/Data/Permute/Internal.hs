@@ -238,7 +238,7 @@ getElems p = do
     getElemsArr arr n i 
         | i == n = return []
         | otherwise = do
-            a  <- unsafeRead arr i
+            a  <- unsafeInterleaveM $ unsafeRead arr i
             as <- unsafeInterleaveM $ getElemsArr arr n (i+1)
             return (a:as)
 
