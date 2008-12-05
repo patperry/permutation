@@ -193,7 +193,14 @@ newCopyPermute = undefined
 -- into the permtuation @dst@.  The two permutations must have the same
 -- size.
 copyPermute :: (MPermute q m, MPermute p m) => q -> p -> m ()
-copyPermute = undefined
+copyPermute q p = do
+    n <- getSize p
+    forM_ [0..(n-1)] $ \i ->
+        unsafeRead src i >>= unsafeWrite dst i
+  where
+    src = toData p
+    dst = toData q
+    
 
 -- | Set a permutation to the identity.
 setIdentity :: (MPermute p m) => p -> m ()
