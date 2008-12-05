@@ -8,7 +8,7 @@
 --
 -- An overloaded interface to mutable permutations. For permutation types 
 -- which can be used with this interface, see "Data.Permute.IO" and
--- "Data.Array.ST".
+-- "Data.Permute.ST".
 --
 
 module Data.Permute.MPermute (

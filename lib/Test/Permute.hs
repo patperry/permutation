@@ -7,6 +7,8 @@
 -- Maintainer : Patrick Perry <patperry@stanford.edu>
 -- Stability  : experimental
 --
+-- An 'Arbitrary' instance and functions for generating random permutations.
+--
 
 module Test.Permute (
     permute

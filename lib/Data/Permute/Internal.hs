@@ -384,7 +384,7 @@ getElems = unsafeIOToM . readElems . toData
 -- | Returns whether or not the permutation is valid.  For it to be valid,
 -- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
 -- values @p[0],...,p[n-1]@.
-isValid :: forall p m. (MPermute p m) => p -> m Bool
+isValid :: (MPermute p m) => p -> m Bool
 isValid p = unsafeIOToM $ do
     liftM and validIndices
   where
