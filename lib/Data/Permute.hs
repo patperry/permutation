@@ -19,6 +19,7 @@ module Data.Permute (
 
     -- * Accessing permutation elements
     apply,
+    unsafeApply,
 
     -- * Permutation properties
     size,

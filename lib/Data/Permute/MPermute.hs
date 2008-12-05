@@ -26,6 +26,7 @@ module Data.Permute.MPermute (
     
     -- * Accessing permutation elements
     getPermute,
+    unsafeGetPermute,
     swapPermute,
     
     -- * Permutation properties
@@ -34,7 +35,8 @@ module Data.Permute.MPermute (
     isValid,
 
     -- * Permutation functions
-    setInverse,
+    getInverse,
+    copyInverse,
     setNext,
     setPrev,
     
