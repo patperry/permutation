@@ -18,12 +18,21 @@ import Text.Printf
 import Test.Permute()
 import qualified Test.Permute as Test
 
+newPermute_S n = permute n
+prop_NewPermute (Nat n) = 
+    newPermute n `equivalent` newPermute_S n
 
-prop_dummy = True
+newListPermute_S n is = listPermute n is
+prop_NewListPermute (ListPermute n is) =
+    newListPermute n is `equivalent` newListPermute_S n is
 
+getElems_S p = (elems p, p)
+prop_GetElems = getElems `implements` getElems_S
 
 tests_STPermute = 
-    [ ("dummy", mytest prop_dummy)
+    [ ("newPermute"     , mytest prop_NewPermute)
+    , ("newListPermute" , mytest prop_NewListPermute)
+    , ("getElems"       , mytest prop_GetElems)
     ]
 
 
