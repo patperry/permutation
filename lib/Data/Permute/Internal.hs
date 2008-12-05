@@ -101,7 +101,6 @@ nextPrevHelp set p = runST $ do
         if valid
             then Just $ unsafeFreeze p'
             else Nothing
-            
 
 -- | Get a list of swaps equivalent to the permutation.  The returned list will
 -- have length equal to the size of the permutation.  A result of
@@ -144,22 +143,25 @@ type PermuteData p = PermuteArray p Int Int
 -- manipulated.
 class (HasPermuteArray p, MArray (PermuteArray p) Int m) 
     => MPermute p m | p -> m, m -> p where
-    
-    -- | Allocate a new permutation but do not initialize it.
-    newPermute_ :: Int -> m p
-    
-    -- | Create a new permutation initialized to be the identity.
-    newPermute  :: Int -> m p
-    newPermute n = do
-        p <- newPermute_ n
-        setIdentity p
-        return p
-
-    -- | Get the size of the permutation.
-    getSize :: p -> m Int
-    
     -- | Get the underlying array that stores the permutation
-    getData :: p -> m (PermuteData p)
+    toData :: p -> PermuteData p
+    
+    -- | Create a permutation using the specified array.  The array must
+    -- be @0@-based.
+    fromData :: PermuteData p -> p
+
+
+-- | Create a new permutation initialized to be the identity.
+newPermute :: (MPermute p m) => Int -> m p
+newPermute n = do
+    p <- newPermute_ n
+    setIdentity p
+    return p
+
+-- | Allocate a new permutation but do not initialize it.
+newPermute_ :: (MPermute p m) => Int -> m p
+newPermute_ n = 
+    liftM fromData $ newArray_ (0,n-1)
         
 -- | Construct a permutation from a list of elements.  
 -- @newListPermute n is@ creates a permuation of size @n@ with
@@ -167,7 +169,8 @@ class (HasPermuteArray p, MArray (PermuteArray p) Int m)
 -- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
 -- exactly once each.
 newListPermute :: (MPermute p m) => Int -> [Int] -> m p
-newListPermute = undefined
+newListPermute n is =
+    liftM fromData $ newListArray (0,n-1) is
 
 -- | Construct a permutation from a list of swaps.
 -- @newSwapsPermute n ss@ creats a permuation of size @n@ from the sequence
@@ -209,6 +212,11 @@ unsafeGetPermute = undefined
 swapPermute :: (MPermute p m) => p -> Int -> Int -> m ()
 swapPermute = undefined
 {-# INLINE swapPermute #-}
+
+-- | Get the size of a permutation.
+getSize :: (MPermute p m) => p -> m Int
+getSize p = liftM ((1+) . snd) $ getBounds (toData p)
+{-# INLINE getSize #-}
 
 -- | Get a lazy list of the permutation elements.  The laziness makes this
 -- function slightly dangerous if you are modifying the permutation.  See also
@@ -287,13 +295,11 @@ instance HasPermuteArray (STPermute s) where
     type PermuteArray (STPermute s) = STUArray s
     
 instance MPermute (STPermute s) (ST s) where
-    newPermute_ n = liftM STPermute $ newArray_ (0,n-1)
-    
-    getSize (STPermute a) = liftM ((1+) . snd) $ getBounds a
-    {-# INLINE getSize #-}
-    
-    getData (STPermute a) = return a
-    {-# INLINE getData #-}
+    toData (STPermute a) = a
+    {-# INLINE toData #-}
+
+    fromData = STPermute
+    {-# INLINE fromData #-}
 
 
 -- | A mutable permutation that can be manipulated in the 'IO' monad.
@@ -303,10 +309,8 @@ instance HasPermuteArray IOPermute where
     type PermuteArray IOPermute = IOUArray
     
 instance MPermute IOPermute IO where
-    newPermute_ n = liftM IOPermute $ newArray_ (0,n-1)
-    
-    getSize (IOPermute a) = liftM ((1+) . snd) $ getBounds a
-    {-# INLINE getSize #-}
-    
-    getData (IOPermute a) = return a
-    {-# INLINE getData #-}
+    toData (IOPermute a) = a
+    {-# INLINE toData #-}
+
+    fromData = IOPermute
+    {-# INLINE fromData #-}

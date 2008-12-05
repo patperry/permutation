@@ -18,6 +18,8 @@ module Data.Permute.MPermute (
     MPermute(..),
     
     -- * Constructing mutable permutations
+    newPermute,
+    newPermute_,
     newListPermute,
     newSwapsPermute,
     newCopyPermute,
@@ -30,6 +32,7 @@ module Data.Permute.MPermute (
     swapPermute,
     
     -- * Permutation properties
+    getSize,
     getElems,
     getElems',
     isValid,
