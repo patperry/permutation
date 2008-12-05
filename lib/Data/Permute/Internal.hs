@@ -23,7 +23,6 @@ import Foreign.ForeignPtr       (mallocForeignPtrBytes)
 #endif
 #endif
 
-import Debug.Trace
 import Control.Monad
 import Control.Monad.ST
 import Foreign
