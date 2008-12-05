@@ -66,6 +66,11 @@ prop_SwapElems (Swap n i j) =
         (\p -> swapElems p i j) 
         (\p -> swapElems_S p i j)
 
+prop_UnsafeSwapElems (Swap n i j) =
+    implementsFor n
+        (\p -> unsafeSwapElems p i j) 
+        (\p -> swapElems_S p i j)
+
 
 getSize_S p = (length (elems p), p)
 prop_GetSize = getSize `implements` getSize_S
@@ -80,17 +85,18 @@ prop_GetElems' = getElems' `implements` getElems'_S
 
 
 tests_STPermute = 
-    [ ("newPermute"     , mytest prop_NewPermute)
-    , ("newListPermute" , mytest prop_NewListPermute)
-    , ("newCopyPermute" , mytest prop_NewCopyPermute)
-    , ("copyPermute"    , mytest prop_CopyPermute)
-    , ("setIdentity"    , mytest prop_SetIdentity)
-    , ("getElem"        , mytest prop_GetElem)
-    , ("unsafeGetElem"  , mytest prop_UnsafeGetElem)
-    , ("swapElems"      , mytest prop_SwapElems)
-    , ("getSize"        , mytest prop_GetSize)
-    , ("getElems"       , mytest prop_GetElems)
-    , ("getElems'"      , mytest prop_GetElems')
+    [ ("newPermute"        , mytest prop_NewPermute)
+    , ("newListPermute"    , mytest prop_NewListPermute)
+    , ("newCopyPermute"    , mytest prop_NewCopyPermute)
+    , ("copyPermute"       , mytest prop_CopyPermute)
+    , ("setIdentity"       , mytest prop_SetIdentity)
+    , ("getElem"           , mytest prop_GetElem)
+    , ("unsafeGetElem"     , mytest prop_UnsafeGetElem)
+    , ("swapElems"         , mytest prop_SwapElems)
+    , ("unsafeSwapElems"   , mytest prop_UnsafeSwapElems)
+    , ("getSize"           , mytest prop_GetSize)
+    , ("getElems"          , mytest prop_GetElems)
+    , ("getElems'"         , mytest prop_GetElems')
     ]
 
 
