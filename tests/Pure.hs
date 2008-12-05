@@ -44,12 +44,12 @@ prop_apply_help a =
 
 
 tests_Permute = 
-    [ ("size . permute"        , mytest prop_size_permute)
-    , ("elems . permute"       , mytest prop_elems_permute)
-    , ("size . listPermute"    , mytest prop_size_listPermute)
-    , ("elems . listPermute"   , mytest prop_elems_listPermute)
-    , ("size . invSwapsPermute"    , mytest prop_size_invSwapsPermute)
-    , ("elems . invSwapsPermute"   , mytest prop_elems_invSwapsPermute)
-    , ("apply"                 , mytest prop_apply)
-    , ("unsafeApply"           , mytest prop_unsafeApply)
+    [ ("size . permute"          , mytest prop_size_permute)
+    , ("elems . permute"         , mytest prop_elems_permute)
+    , ("size . listPermute"      , mytest prop_size_listPermute)
+    , ("elems . listPermute"     , mytest prop_elems_listPermute)
+    , ("size . invSwapsPermute"  , mytest prop_size_invSwapsPermute)
+    , ("elems . invSwapsPermute" , mytest prop_elems_invSwapsPermute)
+    , ("apply"                   , mytest prop_apply)
+    , ("unsafeApply"             , mytest prop_unsafeApply)
     ]
