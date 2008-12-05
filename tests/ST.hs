@@ -26,11 +26,17 @@ newListPermute_S n is = listPermute n is
 prop_NewListPermute (ListPermute n is) =
     newListPermute n is `equivalent` newListPermute_S n is
 
-getElems_S p = (elems p, p)
-prop_GetElems = getElems `implements` getElems_S
+getElem_S p i = ((elems p) !! i, p)
+prop_GetElem (Index n i) =
+    implementsFor n
+        (\p -> getElem   p i)
+        (\p -> getElem_S p i)
 
-getElems'_S p = (elems p, p)
-prop_GetElems' = getElems' `implements` getElems'_S
+prop_UnsafeGetElem (Index n i) =
+    implementsFor n
+        (\p -> unsafeGetElem p i)
+        (\p -> getElem_S p i)
+
 
 swapElems_S p i j = ((), p')
   where
@@ -45,13 +51,26 @@ prop_SwapElems (Swap n i j) =
     implementsFor n
         (\p -> swapElems p i j) 
         (\p -> swapElems_S p i j)
+
+
       
+getElems_S p = (elems p, p)
+prop_GetElems = getElems `implements` getElems_S
+
+getElems'_S p = (elems p, p)
+prop_GetElems' = getElems' `implements` getElems'_S
+
+
+
+
 tests_STPermute = 
     [ ("newPermute"     , mytest prop_NewPermute)
     , ("newListPermute" , mytest prop_NewListPermute)
+    , ("getElem"        , mytest prop_GetElem)
+    , ("unsafeGetElem"  , mytest prop_UnsafeGetElem)
+    , ("swapElems"      , mytest prop_SwapElems)
     , ("getElems"       , mytest prop_GetElems)
     , ("getElems'"      , mytest prop_GetElems')
-    , ("swapElems"      , mytest prop_SwapElems)
     ]
 
 
