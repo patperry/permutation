@@ -15,15 +15,31 @@ module Data.Permute.Internal
 import Control.Monad
 import Control.Monad.ST
 
-import Data.Array.Base ( unsafeAt, unsafeRead, unsafeWrite )
+import Data.Array.Base ( unsafeAt, unsafeRead, unsafeWrite, freezeSTUArray,
+    unsafeFreezeSTUArray, thawSTUArray, unsafeThawSTUArray )
 import Data.Array.MArray ( MArray )
 import qualified Data.Array.MArray as MArray
-import Data.Array.IO ( IOUArray )
+-- import Data.Array.IO ( IOUArray )
+import Data.Array.IO.Internals ( IOUArray(..) )
 import Data.Array.ST ( STUArray )
 import Data.Array.Unboxed hiding ( elems )
 import qualified Data.Array.Unboxed as Array
 
 import System.IO.Unsafe
+
+
+freezeIOUArray :: Ix ix => IOUArray ix e -> IO (UArray ix e)
+freezeIOUArray (IOUArray marr) = stToIO (freezeSTUArray marr)
+
+unsafeFreezeIOUArray :: Ix ix => IOUArray ix e -> IO (UArray ix e)
+unsafeFreezeIOUArray (IOUArray marr) = stToIO (unsafeFreezeSTUArray marr)
+
+thawIOUArray :: Ix ix => UArray ix e -> IO (IOUArray ix e)
+thawIOUArray arr = stToIO (liftM IOUArray (thawSTUArray arr))
+
+unsafeThawIOUArray :: Ix ix => UArray ix e -> IO (IOUArray ix e)
+unsafeThawIOUArray arr = stToIO (liftM IOUArray (unsafeThawSTUArray arr))
+
 
 
 --------------------------------- Permute ---------------------------------
@@ -129,20 +145,28 @@ instance Eq Permute where
 -- @0@-based array of @n@ 'Int's.  The permutation represents a reordering of
 -- the integers @0, ..., (n-1)@.  The @i@th element of the array stores
 -- the value @p_i@. 
-class HasPermuteArray p where
+class (Monad m) => HasPermuteArray p m | p -> m, m -> p where
     -- | The underlying array type.
     type PermuteArray p :: * -> * -> *
+
+    freezePermuteArray :: PermuteData p -> m (UArray Int Int)
+    unsafeFreezePermuteArray :: PermuteData p -> m (UArray Int Int)
+    thawPermuteArray :: UArray Int Int -> m (PermuteData p)
+    unsafeThawPermuteArray :: UArray Int Int -> m (PermuteData p)
+
 
 -- | The 'Int' array type associated with a permutation type @p@.
 type PermuteData p = PermuteArray p Int Int
 
+
 class (Monad m) => UnsafeInterleaveM m where
     unsafeInterleaveM :: m a -> m a
+
 
 -- | Class for representing a mutable permutation.  The type is parameterized
 -- over the type of the monad, @m@, in which the mutable permutation will be
 -- manipulated.
-class (HasPermuteArray p, UnsafeInterleaveM m, MArray (PermuteArray p) Int m) 
+class (HasPermuteArray p m, UnsafeInterleaveM m, MArray (PermuteArray p) Int m) 
     => MPermute p m | p -> m, m -> p where
     -- | Get the underlying array that stores the permutation
     toData :: p -> PermuteData p
@@ -440,10 +464,12 @@ getSwapsHelp inv p = do
 
 -- | Convert a mutable permutation to an immutable one.
 freeze :: (MPermute p m) => p -> m Permute
-freeze = freezeHelp MArray.freeze
+freeze = freezeHelp freezePermuteArray
+{-# INLINE freeze #-}
 
 unsafeFreeze :: (MPermute p m) => p -> m Permute
-unsafeFreeze = freezeHelp MArray.unsafeFreeze
+unsafeFreeze = freezeHelp unsafeFreezePermuteArray
+{-# INLINE unsafeFreeze #-}
 
 freezeHelp :: (MPermute p m) => (PermuteData p -> m (UArray Int Int))
            -> p -> m Permute
@@ -451,10 +477,12 @@ freezeHelp f = liftM Permute . f . toData
 
 -- | Convert an immutable permutation to a mutable one.
 thaw :: (MPermute p m) => Permute -> m p
-thaw = thawHelp MArray.thaw
+thaw = thawHelp thawPermuteArray
+{-# INLINE thaw #-}
 
 unsafeThaw :: (MPermute p m) => Permute -> m p
-unsafeThaw = thawHelp MArray.unsafeThaw
+unsafeThaw = thawHelp unsafeThawPermuteArray
+{-# INLINE unsafeThaw #-}
 
 thawHelp :: (MPermute p m) => (UArray Int Int -> m (PermuteData p))
            -> Permute -> m p
@@ -468,8 +496,14 @@ thawHelp t (Permute p) =
 -- type argument @s@ is the state variable argument for the 'ST' type.
 newtype STPermute s = STPermute (STUArray s Int Int)
 
-instance HasPermuteArray (STPermute s) where
+instance HasPermuteArray (STPermute s) (ST s) where
     type PermuteArray (STPermute s) = STUArray s
+    
+    freezePermuteArray       = freezeSTUArray
+    unsafeFreezePermuteArray = unsafeFreezeSTUArray
+    thawPermuteArray         = thawSTUArray
+    unsafeThawPermuteArray   = unsafeThawSTUArray
+    
     
 instance UnsafeInterleaveM (ST s) where
     unsafeInterleaveM = unsafeInterleaveST
@@ -486,8 +520,14 @@ instance MPermute (STPermute s) (ST s) where
 -- | A mutable permutation that can be manipulated in the 'IO' monad.
 newtype IOPermute = IOPermute (IOUArray Int Int)
 
-instance HasPermuteArray IOPermute where
+instance HasPermuteArray IOPermute IO where
     type PermuteArray IOPermute = IOUArray
+
+    freezePermuteArray       = freezeIOUArray
+    unsafeFreezePermuteArray = unsafeFreezeIOUArray
+    thawPermuteArray         = thawIOUArray
+    unsafeThawPermuteArray   = unsafeThawIOUArray
+
 
 instance UnsafeInterleaveM IO where
     unsafeInterleaveM = unsafeInterleaveIO
