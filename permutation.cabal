@@ -1,5 +1,5 @@
 name:            permutation
-version:         0.1
+version:         0.2
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        Permutations and combinations
 description:
@@ -19,8 +19,15 @@ extra-source-files:  tests/Unit.hs
                      tests/Makefile
 
 library
-    exposed-modules: Data.Permutation
+    exposed-modules: Data.Permute
+                     Data.Permute.MPermute
+                     Data.Permute.IO
+                     Data.Permute.ST
+                     
+    other-modules:   Data.Permute.Internal
 
-    build-depends:   base, containers
+    build-depends:   base, containers, array
+    extensions:      MultiParamTypeClasses, TypeFamilies, FlexibleContexts,
+                     Rank2Types
 
     ghc-options:     -Wall
