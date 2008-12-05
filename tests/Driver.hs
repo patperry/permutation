@@ -11,6 +11,7 @@ module Driver (
     Natural(..),
     Index(..),
     ListPermute(..),
+    InvSwapsPermute(..),
     Swap(..),
     
     mytest,
@@ -67,6 +68,23 @@ instance Arbitrary ListPermute where
             (snd . unzip) $ sortBy (comparing fst) $ zip xs [0..]
 
     coarbitrary = undefined
+
+data InvSwapsPermute = InvSwapsPermute Int [(Int,Int)] deriving (Eq,Show)
+instance Arbitrary InvSwapsPermute where
+    arbitrary = do
+        (Nat n) <- arbitrary
+        let n' = n + 1
+        (Nat k) <- arbitrary
+        ss <- replicateM k (swap n')
+        return $ InvSwapsPermute n' ss
+
+    coarbitrary = undefined
+
+swap n = do
+    i <- choose (0,n-1)
+    j <- choose (0,n-1)
+    return (i,j)
+
 
 data Swap = Swap Int Int Int deriving (Eq,Show)
 instance Arbitrary Swap where

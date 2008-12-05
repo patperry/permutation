@@ -3,6 +3,7 @@ module Pure (
     tests_Permute
     ) where
     
+import Data.List( foldl' )
 import Data.Permute
 
 
@@ -24,6 +25,15 @@ prop_size_listPermute (ListPermute n is) =
 prop_elems_listPermute (ListPermute n is) =
     elems (listPermute n is) == is
 
+prop_size_invSwapsPermute (InvSwapsPermute n ss) =
+    size (invSwapsPermute n ss) == n
+prop_elems_invSwapsPermute (InvSwapsPermute n ss) =
+    elems (invSwapsPermute n ss) == map at [0..(n-1)]
+  where
+    at i = foldl' doSwap i $ reverse ss
+    doSwap k (i,j) | k == i    = j
+                   | k == j    = i
+                   | otherwise = k
 
 prop_apply       = prop_apply_help apply
 prop_unsafeApply = prop_apply_help unsafeApply
@@ -38,6 +48,8 @@ tests_Permute =
     , ("elems . permute"       , mytest prop_elems_permute)
     , ("size . listPermute"    , mytest prop_size_listPermute)
     , ("elems . listPermute"   , mytest prop_elems_listPermute)
+    , ("size . invSwapsPermute"    , mytest prop_size_invSwapsPermute)
+    , ("elems . invSwapsPermute"   , mytest prop_elems_invSwapsPermute)
     , ("apply"                 , mytest prop_apply)
     , ("unsafeApply"           , mytest prop_unsafeApply)
     ]

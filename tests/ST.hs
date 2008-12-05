@@ -51,7 +51,6 @@ prop_UnsafeGetElem (Index n i) =
         (\p -> unsafeGetElem p i)
         (\p -> getElem_S p i)
 
-
 swapElems_S p i j = ((), p')
   where
     (n,is) = (size p, elems p)
