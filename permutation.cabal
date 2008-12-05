@@ -15,7 +15,8 @@ cabal-version: >= 1.2.0
 build-type:      Custom
 tested-with:     GHC ==6.10.1
 
-extra-source-files:  tests/Driver.hs
+extra-source-files:  examples/Enumerate.hs
+                     tests/Driver.hs
                      tests/Main.hs
                      tests/Pure.hs
                      tests/ST.hs
