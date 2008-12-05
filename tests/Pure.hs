@@ -1,12 +1,14 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 module Pure (
     tests_Permute
     ) where
     
 import Control.Monad.ST
-import Data.List( foldl' )
-import Data.Permute
 import Data.Array.ST
+import Data.List( foldl' )
+import Data.Maybe( fromJust )
+
+import Data.Permute
 
 import Driver
 import Test.QuickCheck
@@ -72,6 +74,24 @@ prop_invSwaps_inverse (Nat n) =
     forAll (vector n) $ \xs ->
         applySwaps (invSwaps $ inverse p) xs == (applySwaps (swaps p) xs)
 
+prop_prev_permute (Nat n) =
+    prev (permute n) == Nothing
+prop_next_last (Nat n) =
+    next (listPermute n $ reverse [0..(n-1)]) == Nothing
+
+prop_next_prev (p :: Permute) =
+    case prev p of
+        Just p' -> p == (fromJust $ next p')
+        Nothing -> p == permute n
+  where
+    n = size p
+    
+prop_prev_next (p :: Permute) =
+    case next p of
+        Just p' -> p == (fromJust $ prev p')
+        Nothing -> p == (listPermute n $ reverse [0..(n-1)])
+  where
+    n = size p
 
 tests_Permute = 
     [ ("size . permute"          , mytest prop_size_permute)
@@ -88,6 +108,10 @@ tests_Permute =
     , ("invSwaps"                , mytest prop_invSwaps)
     , ("swaps . inverse"         , mytest prop_swaps_inverse)
     , ("invSwaps . inverse"      , mytest prop_invSwaps_inverse)
+    , ("prev . permute"          , mytest prop_prev_permute)
+    , ("next (last permutation)" , mytest prop_next_last)
+    , ("next . prev"             , mytest prop_next_prev)
+    , ("prev . next"             , mytest prop_prev_next)
     ]
 
 
