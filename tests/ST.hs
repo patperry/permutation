@@ -85,9 +85,6 @@ prop_GetSize = getSize `implements` getSize_S
 getElems_S p = (elems p, p)
 prop_GetElems = getElems `implements` getElems_S
 
-getElems'_S p = (elems p, p)
-prop_GetElems' = getElems' `implements` getElems'_S
-
 
 
 
@@ -105,7 +102,6 @@ tests_STPermute =
     , ("unsafeSwapElems"          , mytest prop_UnsafeSwapElems)
     , ("getSize"                  , mytest prop_GetSize)
     , ("getElems"                 , mytest prop_GetElems)
-    , ("getElems'"                , mytest prop_GetElems')
     ]
 
 

@@ -266,8 +266,7 @@ getSize p = liftM ((1+) . snd) $ MArray.getBounds (toData p)
 {-# INLINE getSize #-}
 
 -- | Get a lazy list of the permutation elements.  The laziness makes this
--- function slightly dangerous if you are modifying the permutation.  See also
--- 'getElems\''.
+-- function slightly dangerous if you are modifying the permutation.
 getElems :: (MPermute p m) => p -> m [Int]
 getElems p = do
     n <- getSize p
@@ -279,10 +278,6 @@ getElems p = do
             a  <- unsafeInterleaveM $ unsafeRead arr i
             as <- unsafeInterleaveM $ getElemsArr arr n (i+1)
             return (a:as)
-
--- | Get a strict list of the permutation elements.
-getElems' :: (MPermute p m) => p -> m [Int]
-getElems' = MArray.getElems . toData
 
 -- | Returns whether or not the permutation is valid.  For it to be valid,
 -- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
@@ -353,26 +348,13 @@ setPrev = undefined
 -- | Get a lazy list of swaps equivalent to the permutation.  A result of
 -- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
 -- then @i1 <-> j1@, and so on until @ik <-> jk@.  The laziness makes this
--- function slightly dangerous if you are modifying the permutation.  See also
--- 'getSwaps\''.
+-- function slightly dangerous if you are modifying the permutation.
 getSwaps :: (MPermute p m) => p -> m [(Int,Int)]
 getSwaps = getSwapsHelp False
-
--- | Get a strict list of swaps equivalent to a permutation.
-getSwaps' :: (MPermute p m) => p -> m [(Int,Int)]
-getSwaps' p = do
-    ss <- getSwaps p
-    return $ (length ss) `seq` ss
 
 -- | Get a lazy list of swaps equivalent to the inverse of a permutation.
 getInvSwaps :: (MPermute p m) => p -> m [(Int,Int)]
 getInvSwaps = getSwapsHelp True
-
--- | Get a strict list of swaps equivalent to the inverse of a permutation.
-getInvSwaps' :: (MPermute p m) => p -> m [(Int,Int)]
-getInvSwaps' p = do
-    ss <- getInvSwaps p
-    return $ (length ss) `seq` ss
 
 getSwapsHelp :: (MPermute p m) => Bool -> p -> m [(Int,Int)]
 getSwapsHelp inv p = do
