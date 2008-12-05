@@ -20,7 +20,6 @@ prop_size_permute (Nat n) =
 prop_elems_permute (Nat n) =
     elems (permute n) == [0..(n-1)]
 
-
 prop_size_listPermute (ListPermute n is) =
     size (listPermute n is) == n
 prop_elems_listPermute (ListPermute n is) =
@@ -42,6 +41,14 @@ prop_apply_help a =
     forAll arbitrary $ \(Index n i) ->
     forAll (Test.permute n) $ \p ->
         a p i == (elems p) !! i
+
+prop_size_inverse (p :: Permute) =
+    size (inverse p) == size p
+prop_elems_inverse (p :: Permute) =
+    all (\i -> is' !! (apply p i) == i) [0..(n-1)]
+  where
+    n   = size p
+    is' = elems (inverse p)
 
 prop_swaps (Nat n) =
     forAll (Test.permute n) $ \p ->
@@ -65,6 +72,8 @@ tests_Permute =
     , ("elems . invSwapsPermute" , mytest prop_elems_invSwapsPermute)
     , ("apply"                   , mytest prop_apply)
     , ("unsafeApply"             , mytest prop_unsafeApply)
+    , ("size . inverse"          , mytest prop_size_inverse)
+    , ("elems . inverse"         , mytest prop_elems_inverse)
     , ("swaps"                   , mytest prop_swaps)
     , ("invSwaps"                , mytest prop_invSwaps)
     ]
