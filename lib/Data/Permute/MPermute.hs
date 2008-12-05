@@ -29,7 +29,7 @@ module Data.Permute.MPermute (
     -- * Accessing permutation elements
     getPermute,
     unsafeGetPermute,
-    swapPermute,
+    swapElems,
     
     -- * Permutation properties
     getSize,

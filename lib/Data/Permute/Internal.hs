@@ -15,7 +15,7 @@ module Data.Permute.Internal
 import Control.Monad
 import Control.Monad.ST
 
-import Data.Array.Base ( unsafeAt, unsafeRead )
+import Data.Array.Base ( unsafeAt, unsafeRead, unsafeWrite )
 import Data.Array.MArray ( MArray )
 import qualified Data.Array.MArray as MArray
 import Data.Array.IO ( IOUArray )
@@ -210,10 +210,16 @@ unsafeGetPermute :: (MPermute p m) => p -> Int -> m Int
 unsafeGetPermute = undefined
 {-# INLINE unsafeGetPermute #-}
 
--- | @swapPermute p i j@ exchanges the @i@th and @j@th elements of the 
+-- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
 -- permutation @p@.
-swapPermute :: (MPermute p m) => p -> Int -> Int -> m ()
-swapPermute = undefined
+swapElems :: (MPermute p m) => p -> Int -> Int -> m ()
+swapElems p i j = do
+    i' <- unsafeRead arr i
+    j' <- unsafeRead arr j
+    unsafeWrite arr i j'
+    unsafeWrite arr j i'
+  where
+    arr = toData p
 {-# INLINE swapPermute #-}
 
 -- | Get the size of a permutation.
