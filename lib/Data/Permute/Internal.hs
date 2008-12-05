@@ -176,7 +176,7 @@ listPermute n is = runST $
 
 -- | Construct a permutation from a list of swaps.
 -- @invSwapsPermute n ss@ creats a permuation of size @n@ given by the
--- *inverse* of a sequence of swaps.
+-- /inverse/ of a sequence of swaps.
 -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
 -- @i0 \<-> j0@, then 
@@ -238,8 +238,8 @@ nextPrevHelp set p = runST $ do
             else return Nothing
 
 -- | Get a list of swaps equivalent to the permutation.  A result of
--- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
--- then @i1 <-> j1@, and so on until @ik <-> jk@.
+-- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 \<-> j0@, 
+-- then @i1 \<-> j1@, and so on until @ik \<-> jk@.
 swaps :: Permute -> [(Int,Int)]
 swaps p = runST $
     getSwaps =<< unsafeThaw p
@@ -250,7 +250,7 @@ invSwaps p = runST $
     getInvSwaps =<< unsafeThaw p
 
 -- | Returns a permutation which rearranges its first argument into ascending 
--- order.  This is a special case of 'getOrderBy'.
+-- order.  This is a special case of 'orderBy'.
 order :: (Ord a) => [a] -> Permute
 order xs = runST $ 
     unsafeFreeze =<< getOrder xs
@@ -262,7 +262,7 @@ orderBy cmp xs = runST $
 -- | Returns a permutation, the inverse of which rearranges its first argument 
 -- into ascending order. The returned permutation, @p@, has the property that
 -- @p[i]@ is the rank of the @i@th element of the passed-in list. This is a 
--- special case of 'getRankBy'.
+-- special case of 'rankBy'.
 rank :: (Ord a) => [a] -> Permute
 rank xs = runST $
     unsafeFreeze =<< getRank xs
@@ -324,7 +324,7 @@ unsafeNewListPermute n is = unsafeIOToM $
 
 -- | Construct a permutation from a list of swaps.
 -- @newInvSwapsPermute n ss@ creates a permuation of size @n@ given by the
--- *inverse* of a sequence of swaps.
+-- /inverse/ of a sequence of swaps.
 -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
 -- @i0 \<-> j0@, then 
@@ -515,8 +515,8 @@ setNextBy lt p = unsafeIOToM $ do
 
     
 -- | Get a lazy list of swaps equivalent to the permutation.  A result of
--- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
--- then @i1 <-> j1@, and so on until @ik <-> jk@.  The laziness makes this
+-- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 \<-> j0@, 
+-- then @i1 \<-> j1@, and so on until @ik \<-> jk@.  The laziness makes this
 -- function slightly dangerous if you are modifying the permutation.
 getSwaps :: (MPermute p m) => p -> m [(Int,Int)]
 getSwaps = getSwapsHelp False
