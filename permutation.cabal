@@ -13,7 +13,7 @@ author:          Patrick Perry
 maintainer:      Patrick Perry <patperry@stanford.edu>
 cabal-version: >= 1.2.0
 build-type:      Custom
-tested-with:     GHC ==6.8.2
+tested-with:     GHC ==6.10.1
 
 extra-source-files:  tests/Driver.hs
                      tests/Main.hs
@@ -31,7 +31,7 @@ library
                      
     other-modules:   Data.Permute.Internal
 
-    build-depends:   base, containers, array, QuickCheck < 2
+    build-depends:   base, array, QuickCheck < 2
     extensions:      MultiParamTypeClasses, TypeFamilies, 
                      FunctionalDependencies, FlexibleContexts, 
                      Rank2Types, BangPatterns
