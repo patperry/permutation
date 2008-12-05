@@ -15,8 +15,8 @@ module Data.Permute.Internal
 import Control.Monad
 import Control.Monad.ST
 
-import Data.Array.Base( unsafeAt, unsafeRead )
-import Data.Array.MArray hiding ( unsafeFreeze, thaw, unsafeThaw )
+import Data.Array.Base ( unsafeAt, unsafeRead )
+import Data.Array.MArray ( MArray )
 import qualified Data.Array.MArray as MArray
 import Data.Array.IO ( IOUArray )
 import Data.Array.ST ( STUArray )
@@ -155,12 +155,12 @@ class (HasPermuteArray p, MArray (PermuteArray p) Int m)
 -- | Create a new permutation initialized to be the identity.
 newPermute :: (MPermute p m) => Int -> m p
 newPermute n =
-    liftM fromData $ newListArray (0,n-1) [0..]
+    liftM fromData $ MArray.newListArray (0,n-1) [0..]
 
 -- | Allocate a new permutation but do not initialize it.
 newPermute_ :: (MPermute p m) => Int -> m p
 newPermute_ n = 
-    liftM fromData $ newArray_ (0,n-1)
+    liftM fromData $ MArray.newArray_ (0,n-1)
         
 -- | Construct a permutation from a list of elements.  
 -- @newListPermute n is@ creates a permuation of size @n@ with
@@ -169,7 +169,7 @@ newPermute_ n =
 -- exactly once each.
 newListPermute :: (MPermute p m) => Int -> [Int] -> m p
 newListPermute n is =
-    liftM fromData $ newListArray (0,n-1) is
+    liftM fromData $ MArray.newListArray (0,n-1) is
 
 -- | Construct a permutation from a list of swaps.
 -- @newSwapsPermute n ss@ creats a permuation of size @n@ from the sequence
@@ -214,7 +214,7 @@ swapPermute = undefined
 
 -- | Get the size of a permutation.
 getSize :: (MPermute p m) => p -> m Int
-getSize p = liftM ((1+) . snd) $ getBounds (toData p)
+getSize p = liftM ((1+) . snd) $ MArray.getBounds (toData p)
 {-# INLINE getSize #-}
 
 -- | Get a lazy list of the permutation elements.  The laziness makes this
