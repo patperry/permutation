@@ -47,6 +47,12 @@ module Data.Permute.MPermute (
     getSwaps,
     getInvSwaps,
     
+    -- * Sorting
+    getOrder,
+    getOrderBy,
+    getRank,
+    getRankBy,
+    
     -- * Converstions between mutable and immutable permutations
     freeze,
     unsafeFreeze,

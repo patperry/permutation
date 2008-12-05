@@ -34,6 +34,12 @@ module Data.Permute (
     swaps,
     invSwaps,
     
+    -- * Sorting
+    order,
+    orderBy,
+    rank,
+    rankBy,
+    
     ) where
 
 import Data.Permute.Internal
