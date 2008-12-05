@@ -153,10 +153,8 @@ class (HasPermuteArray p, MArray (PermuteArray p) Int m)
 
 -- | Create a new permutation initialized to be the identity.
 newPermute :: (MPermute p m) => Int -> m p
-newPermute n = do
-    p <- newPermute_ n
-    setIdentity p
-    return p
+newPermute n =
+    liftM fromData $ newListArray (0,n-1) [0..]
 
 -- | Allocate a new permutation but do not initialize it.
 newPermute_ :: (MPermute p m) => Int -> m p
