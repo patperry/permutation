@@ -33,6 +33,7 @@ library
 
     build-depends:   base, containers, array, QuickCheck < 2
     extensions:      MultiParamTypeClasses, TypeFamilies, 
-                     FunctionalDependencies, FlexibleContexts, Rank2Types
+                     FunctionalDependencies, FlexibleContexts, 
+                     Rank2Types, BangPatterns
 
     ghc-options:     -Wall

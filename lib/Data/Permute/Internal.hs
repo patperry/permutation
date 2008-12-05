@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeFamilies, 
-        FlexibleContexts, Rank2Types #-}
+        FlexibleContexts, Rank2Types, BangPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Permute.Internal
@@ -337,14 +337,59 @@ copyInverse q p = do
 -- and repeatedly calling @setNext@ will iterate through all permutations of a 
 -- given size.
 setNext :: (MPermute p m) => p -> m Bool
-setNext = undefined
+setNext = setNextBy (<)
 
 -- | Step backwards to the previous permutation in lexicographic order and
 -- return @True@.  If there is no previous permutation, return @False@ and
 -- leave the permutation unmodified.
 setPrev :: (MPermute p m) => p -> m Bool
-setPrev = undefined
+setPrev = setNextBy (>)
 
+setNextBy :: (MPermute p m) => (Int -> Int -> Bool) -> p -> m Bool
+setNextBy lt p = do
+    n <- getSize p
+    if n > 1
+        then do
+            findLastAscent (n-2) >>=
+                maybe (return False) (\i -> do
+                    i'     <- unsafeRead arr i
+                    i1'    <- unsafeRead arr (i+1)
+                    (k,k') <- findSmallestLargerThan n i' (i+2) (i+1) i1'
+                    
+                    -- swap i and k
+                    unsafeWrite arr i k'
+                    unsafeWrite arr k i'
+                    
+                    forM_ [(i+1)..((n+i) `div` 2)] $ \j ->
+                        unsafeSwapElems p j (n + i - j)
+                    
+                    return True
+                )
+        else 
+            return False
+        
+  where
+    arr = toData p
+    i `gt` j = not (i `lt` j)
+    
+    findLastAscent i = do
+        ascent <- isAscent i
+        if ascent then return (Just i) else recurse
+      where
+        recurse = if i /= 0 then findLastAscent (i-1) else return Nothing 
+    
+    findSmallestLargerThan !n !i' !j !k !k'
+        | j < n = do
+            j' <- unsafeRead arr j
+            if j' `gt` i' && j' `lt` k'
+                then findSmallestLargerThan n i' (j+1) j j'
+                else findSmallestLargerThan n i' (j+1) k k'
+        | otherwise =
+            return (k,k')
+            
+    isAscent i = liftM2 lt (unsafeRead arr i) (unsafeRead arr (i+1))
+    
+    
 -- | Get a lazy list of swaps equivalent to the permutation.  A result of
 -- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
 -- then @i1 <-> j1@, and so on until @ik <-> jk@.  The laziness makes this
