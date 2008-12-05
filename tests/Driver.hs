@@ -10,7 +10,7 @@
 module Driver (
     Natural(..),
     Index(..),
-    ListPerm(..),
+    ListPermute(..),
     
     mytest,
     mycheck,
@@ -57,12 +57,12 @@ instance Arbitrary Index where
 
     coarbitrary = undefined
 
-data ListPerm = ListPerm Int [Int] deriving (Eq,Show)
-instance Arbitrary ListPerm where
+data ListPermute = ListPermute Int [Int] deriving (Eq,Show)
+instance Arbitrary ListPermute where
     arbitrary = do
         (Nat n) <- arbitrary
         xs <- vector n :: Gen [Int]
-        return . ListPerm n $ 
+        return . ListPermute n $ 
             (snd . unzip) $ sortBy (comparing fst) $ zip xs [0..]
 
     coarbitrary = undefined

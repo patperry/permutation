@@ -19,9 +19,9 @@ prop_elems_permute (Nat n) =
     elems (permute n) == [0..(n-1)]
 
 
-prop_size_listPermute (ListPerm n is) =
+prop_size_listPermute (ListPermute n is) =
     size (listPermute n is) == n
-prop_elems_listPermute (ListPerm n is) =
+prop_elems_listPermute (ListPermute n is) =
     elems (listPermute n is) == is
 
 
