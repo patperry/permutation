@@ -61,7 +61,17 @@ prop_invSwaps (Nat n) =
     forAll (vector n) $ \xs ->
         let xs' = applySwaps (invSwaps p) xs
         in all (\i -> xs' !! (apply p i) == xs !! i) [0..(n-1)]
+
+prop_swaps_inverse (Nat n) =
+    forAll (Test.permute n) $ \p ->
+    forAll (vector n) $ \xs ->
+        applySwaps (swaps $ inverse p) xs == (applySwaps (invSwaps p) xs)
     
+prop_invSwaps_inverse (Nat n) =
+    forAll (Test.permute n) $ \p ->
+    forAll (vector n) $ \xs ->
+        applySwaps (invSwaps $ inverse p) xs == (applySwaps (swaps p) xs)
+
 
 tests_Permute = 
     [ ("size . permute"          , mytest prop_size_permute)
@@ -76,6 +86,8 @@ tests_Permute =
     , ("elems . inverse"         , mytest prop_elems_inverse)
     , ("swaps"                   , mytest prop_swaps)
     , ("invSwaps"                , mytest prop_invSwaps)
+    , ("swaps . inverse"         , mytest prop_swaps_inverse)
+    , ("invSwaps . inverse"      , mytest prop_invSwaps_inverse)
     ]
 
 
