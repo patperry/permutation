@@ -186,13 +186,16 @@ newSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
 newSwapsPermute = undefined
 
 -- | Construct a new permutation by copying another.
-newCopyPermute :: (MPermute p m, MPermute q m) => p -> m q
-newCopyPermute = undefined
+newCopyPermute :: (MPermute p m) => p -> m p
+newCopyPermute p =
+    liftM fromData $ copyArray (toData p)
+  where
+    copyArray = MArray.mapArray id
 
 -- | @copyPermute dst src@ copies the elements of the permutation @src@
 -- into the permtuation @dst@.  The two permutations must have the same
 -- size.
-copyPermute :: (MPermute q m, MPermute p m) => q -> p -> m ()
+copyPermute :: (MPermute p m) => p -> p -> m ()
 copyPermute q p = do
     n <- getSize p
     forM_ [0..(n-1)] $ \i ->
