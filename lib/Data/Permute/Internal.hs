@@ -1,5 +1,6 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeFamilies, 
-        FlexibleContexts, Rank2Types, BangPatterns #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, 
+        FlexibleContexts, Rank2Types, BangPatterns, CPP #-}
+{-# OPTIONS_GHC -XMagicHash -XUnboxedTuples #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Permute.Internal
@@ -11,41 +12,152 @@
 
 module Data.Permute.Internal 
     where
-    
+
+#if defined(__GLASGOW_HASKELL__)
+import GHC.Base                 ( realWorld# )
+import GHC.IOBase               ( IO(IO) )
+#if __GLASGOW_HASKELL__ >= 605
+import GHC.ForeignPtr           (mallocPlainForeignPtrBytes)
+#else
+import Foreign.ForeignPtr       (mallocForeignPtrBytes)
+#endif
+#endif
+
+import Debug.Trace
 import Control.Monad
 import Control.Monad.ST
-
-import Data.Array.Base ( unsafeAt, unsafeRead, unsafeWrite, freezeSTUArray,
-    unsafeFreezeSTUArray, thawSTUArray, unsafeThawSTUArray, getNumElements )
-import Data.Array.MArray ( MArray )
-import qualified Data.Array.MArray as MArray
--- import Data.Array.IO ( IOUArray )
-import Data.Array.IO.Internals ( IOUArray(..) )
-import Data.Array.ST ( STUArray )
-import Data.Array.Unboxed hiding ( elems )
-import qualified Data.Array.Unboxed as Array
+import Foreign
 
 import System.IO.Unsafe
 
 
-freezeIOUArray :: Ix ix => IOUArray ix e -> IO (UArray ix e)
-freezeIOUArray (IOUArray marr) = stToIO (freezeSTUArray marr)
+class (Monad m) => UnsafeIOToM m where
+    unsafeInterleaveM :: m a -> m a
+    unsafeIOToM :: IO a -> m a
 
-unsafeFreezeIOUArray :: Ix ix => IOUArray ix e -> IO (UArray ix e)
-unsafeFreezeIOUArray (IOUArray marr) = stToIO (unsafeFreezeSTUArray marr)
+{-# INLINE inlinePerformIO #-}
+inlinePerformIO :: IO a -> a
+#if defined(__GLASGOW_HASKELL__)
+inlinePerformIO (IO m) = case m realWorld# of (# _, r #) -> r
+#else
+inlinePerformIO = unsafePerformIO
+#endif
 
-thawIOUArray :: Ix ix => UArray ix e -> IO (IOUArray ix e)
-thawIOUArray arr = stToIO (liftM IOUArray (thawSTUArray arr))
+-- | Internally, a permutation of size @n@ is stored as an
+-- @0@-based array of @n@ 'Int's.  The permutation represents a reordering of
+-- the integers @0, ..., (n-1)@.  The @i@th element of the array stores
+-- the value @p_i@. 
+data PermuteData = PD {-# UNPACK #-}  !(ForeignPtr Int) -- payload
+                      {-# UNPACK #-}  !Int -- size
 
-unsafeThawIOUArray :: Ix ix => UArray ix e -> IO (IOUArray ix e)
-unsafeThawIOUArray arr = stToIO (liftM IOUArray (unsafeThawSTUArray arr))
+newArray_ :: Int -> IO PermuteData
+newArray_ n = do
+#if __GLASGOW_HASKELL__ >= 605
+    fp <- mallocPlainForeignPtrBytes (n * sizeOf (0 :: Int))
+#else
+    fp <- mallocForeignPtrBytes (n * sizeOf (0 :: Int))
+#endif
+    return $ PD fp n
 
+newListArray :: Int -> [Int] -> IO PermuteData
+newListArray n is = do
+    p@(PD fp _) <- newArray_ n
+    withForeignPtr fp $ flip pokeArray (take n is)
+    return p
+
+newCopyArray :: PermuteData -> IO PermuteData
+newCopyArray p@(PD _ n) = do
+    q <- newArray_ n
+    unsafeCopy q p
+    return q
+
+unsafeCopy :: PermuteData -> PermuteData -> IO ()
+unsafeCopy (PD dst n) (PD src _) =
+    withForeignPtr dst $ \pDst ->
+    withForeignPtr src $ \pSrc ->
+        copyArray pDst pSrc n
+
+permuteDataSize :: PermuteData -> Int
+permuteDataSize (PD _ n) = n
+{-# INLINE permuteDataSize #-}
+
+withPermuteData :: PermuteData -> (Ptr Int -> Int -> IO a) -> IO a
+withPermuteData (PD fp n) f =
+    withForeignPtr fp $ \p -> f p n
+{-# INLINE withPermuteData #-}
+
+withPermutePtr :: PermuteData -> (Ptr Int -> IO a) -> IO a
+withPermutePtr (PD fp _) f =
+    withForeignPtr fp f
+{-# INLINE withPermutePtr #-}
+
+readArray :: PermuteData -> Int -> IO Int
+readArray p@(PD _ n) i
+    | i >= 0 && i < n =
+        unsafeRead p i
+    | otherwise =
+        fail "invalid index"
+{-# INLINE readArray #-}
+
+unsafeRead :: PermuteData -> Int -> IO Int
+unsafeRead p i = withPermutePtr p (flip peekElemOff i)
+{-# INLINE unsafeRead #-}
+
+inlineRead :: PermuteData -> Int -> Int
+inlineRead p i = inlinePerformIO $! unsafeRead p i
+{-# INLINE inlineRead #-}
+
+readElems :: PermuteData -> IO [Int]
+readElems = return . inlineElems
+
+inlineElems :: PermuteData -> [Int]
+inlineElems (PD fp n) = go start
+  where 
+    start = unsafeForeignPtrToPtr fp
+    end   = start `advancePtr` n
+    
+    go !ptr | ptr == end = inlinePerformIO $ do
+                 touchForeignPtr fp
+                 return []
+            | otherwise =
+                 let e  = inlinePerformIO $ peek ptr
+                     es = go (ptr `advancePtr` 1)
+                 in e `seq` (e:es)
+
+writeArray :: PermuteData -> Int -> Int -> IO ()
+writeArray p@(PD _ n) i x
+    | i >= 0 && i < n =
+        unsafeWrite p i x
+    | otherwise =
+        fail "invalid index"
+{-# INLINE writeArray #-}
+
+unsafeWrite :: PermuteData -> Int -> Int -> IO ()
+unsafeWrite p i x = withPermutePtr p $ \ptr -> (pokeElemOff ptr i x)
+{-# INLINE unsafeWrite #-}
+
+swapArray :: PermuteData -> Int -> Int -> IO ()
+swapArray p@(PD _ n) i j
+    | i == j =
+        return ()
+    | i >= 0 && i < n && j >= 0 && j < n =
+        unsafeSwap p i j
+    | otherwise =
+        fail "invalid index"
+
+unsafeSwap :: PermuteData -> Int -> Int -> IO ()
+unsafeSwap pd i j = withPermutePtr pd $ \ptr -> do
+    i' <- peekElemOff ptr i
+    j' <- peekElemOff ptr j
+    pokeElemOff ptr i j'
+    pokeElemOff ptr j i'
+{-# INLINE unsafeSwap #-}
 
 
 --------------------------------- Permute ---------------------------------
 
 -- | The immutable permutation data type.
-newtype Permute = Permute (UArray Int Int)
+newtype Permute = Permute PermuteData
 
 -- | Construct an identity permutation of the given size.
 permute :: Int -> Permute
@@ -77,20 +189,26 @@ invSwapsPermute n ss = runST $
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
 -- size of the permutation.
 apply :: Permute -> Int -> Int
-apply (Permute a) i = a ! i
+apply p i
+    | i >= 0 && i < size p = 
+        unsafeApply p i
+    | otherwise =
+        error "Invalid index"
 {-# INLINE apply #-}
 
 unsafeApply :: Permute -> Int -> Int
-unsafeApply (Permute a) i = a `unsafeAt` i
+unsafeApply (Permute a) i = a `inlineRead` i
 {-# INLINE unsafeApply #-}
 
 -- | Get the size of the permutation.
 size :: Permute -> Int
-size (Permute a) = ((1+) . snd . bounds) a
+size (Permute (PD _ n)) = n
+{-# INLINE size #-}
 
 -- | Get a list of the permutation elements.
 elems :: Permute -> [Int]
-elems (Permute a) = Array.elems a
+elems (Permute a) = inlineElems a
+{-# INLINE elems #-}
 
 -- | Get the inverse of a permutation
 inverse :: Permute -> Permute
@@ -140,51 +258,30 @@ instance Eq Permute where
 
 --------------------------------- MPermute --------------------------------
 
--- | Class for the associated array type of the underlying storage for a 
--- permutation.  Internally, a permutation of size @n@ is stored as an
--- @0@-based array of @n@ 'Int's.  The permutation represents a reordering of
--- the integers @0, ..., (n-1)@.  The @i@th element of the array stores
--- the value @p_i@. 
-class (Monad m) => HasPermuteArray p m | p -> m, m -> p where
-    -- | The underlying array type.
-    type PermuteArray p :: * -> * -> *
 
-    freezePermuteArray :: PermuteData p -> m (UArray Int Int)
-    unsafeFreezePermuteArray :: PermuteData p -> m (UArray Int Int)
-    thawPermuteArray :: UArray Int Int -> m (PermuteData p)
-    unsafeThawPermuteArray :: UArray Int Int -> m (PermuteData p)
-
-
--- | The 'Int' array type associated with a permutation type @p@.
-type PermuteData p = PermuteArray p Int Int
-
-
-class (Monad m) => UnsafeInterleaveM m where
-    unsafeInterleaveM :: m a -> m a
-
+                       
 
 -- | Class for representing a mutable permutation.  The type is parameterized
 -- over the type of the monad, @m@, in which the mutable permutation will be
 -- manipulated.
-class (HasPermuteArray p m, UnsafeInterleaveM m, MArray (PermuteArray p) Int m) 
-    => MPermute p m | p -> m, m -> p where
+class (UnsafeIOToM m) => MPermute p m | p -> m, m -> p where
     -- | Get the underlying array that stores the permutation
-    toData :: p -> PermuteData p
+    toData :: p -> PermuteData
     
     -- | Create a permutation using the specified array.  The array must
     -- be @0@-based.
-    fromData :: PermuteData p -> p
+    fromData :: PermuteData -> p
 
 
 -- | Create a new permutation initialized to be the identity.
 newPermute :: (MPermute p m) => Int -> m p
-newPermute n =
-    liftM fromData $ MArray.newListArray (0,n-1) [0..]
+newPermute n = unsafeIOToM $
+    liftM fromData $ newListArray n [0..]
 
 -- | Allocate a new permutation but do not initialize it.
 newPermute_ :: (MPermute p m) => Int -> m p
-newPermute_ n = 
-    liftM fromData $ MArray.newArray_ (0,n-1)
+newPermute_ n = unsafeIOToM $
+    liftM fromData $ newArray_ n
         
 -- | Construct a permutation from a list of elements.  
 -- @newListPermute n is@ creates a permuation of size @n@ with
@@ -199,8 +296,8 @@ newListPermute n is = do
     return p
 
 unsafeNewListPermute :: (MPermute p m) => Int -> [Int] -> m p
-unsafeNewListPermute n is =
-    liftM fromData $ MArray.newListArray (0,n-1) is
+unsafeNewListPermute n is = unsafeIOToM $
+    liftM fromData $ newListArray n is
 
 
 -- | Construct a permutation from a list of swaps.
@@ -227,114 +324,90 @@ newInvSwapsPermuteHelp swap n ss = do
 
 -- | Construct a new permutation by copying another.
 newCopyPermute :: (MPermute p m) => p -> m p
-newCopyPermute p =
-    liftM fromData $ copyArray (toData p)
-  where
-    copyArray = MArray.mapArray id
+newCopyPermute p = unsafeIOToM $
+    liftM fromData $ newCopyArray (toData p)
 
 -- | @copyPermute dst src@ copies the elements of the permutation @src@
 -- into the permtuation @dst@.  The two permutations must have the same
 -- size.
 copyPermute :: (MPermute p m) => p -> p -> m ()
-copyPermute q p = do
-    n <- getSize p
-    forM_ [0..(n-1)] $ \i ->
-        unsafeRead src i >>= unsafeWrite dst i
+copyPermute q p = unsafeIOToM $ 
+    unsafeCopy dst src
   where
     src = toData p
     dst = toData q
-    
 
 -- | Set a permutation to the identity.
 setIdentity :: (MPermute p m) => p -> m ()
-setIdentity p = do
-    n <- getSize p
+setIdentity p = unsafeIOToM $ do
     forM_ [0..(n-1)] $ \i ->
         unsafeWrite arr i i
   where
     arr = toData p
+    n   = inlineGetSize p
 
 -- | @getElem p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
 -- size of the permutation.
 getElem :: (MPermute p m) => p -> Int -> m Int
-getElem p i = MArray.readArray (toData p) i
+getElem p i = unsafeIOToM $ readArray (toData p) i
 {-# INLINE getElem #-}
 
 unsafeGetElem :: (MPermute p m) => p -> Int -> m Int
-unsafeGetElem p i = unsafeRead (toData p) i
+unsafeGetElem p i = unsafeIOToM $ unsafeRead (toData p) i
 {-# INLINE unsafeGetElem #-}
 
 -- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
 -- permutation @p@.
 swapElems :: (MPermute p m) => p -> Int -> Int -> m ()
-swapElems = swapElemsHelp MArray.readArray MArray.writeArray
+swapElems p i j = unsafeIOToM $ swapArray (toData p) i j
 
 unsafeSwapElems :: (MPermute p m) => p -> Int -> Int -> m ()
-unsafeSwapElems = swapElemsHelp unsafeRead unsafeWrite
-
-swapElemsHelp :: (MPermute p m) 
-              => (PermuteData p -> Int -> m Int)
-              -> (PermuteData p -> Int -> Int -> m ())
-              -> p -> Int -> Int -> m ()
-swapElemsHelp readArr writeArr p i j 
-    | i /= j = do
-        i' <- readArr arr i
-        j' <- readArr arr j
-        writeArr arr j i'
-        writeArr arr i j'
-    | otherwise =
-        return ()
-  where
-    arr = toData p
+unsafeSwapElems p i j =
+    unsafeIOToM $
+        unsafeSwap (toData p) i j
 
 
 -- | Get the size of a permutation.
 getSize :: (MPermute p m) => p -> m Int
-getSize p = getNumElements (toData p)
+getSize = return . inlineGetSize
 {-# INLINE getSize #-}
+
+inlineGetSize :: (MPermute p m) => p -> Int
+inlineGetSize = permuteDataSize . toData
+{-# INLINE inlineGetSize #-}
 
 -- | Get a lazy list of the permutation elements.  The laziness makes this
 -- function slightly dangerous if you are modifying the permutation.
 getElems :: (MPermute p m) => p -> m [Int]
-getElems p = do
-    n <- getSize p
-    getElemsArr (toData p) n 0
-  where
-    getElemsArr arr n i 
-        | i == n = return []
-        | otherwise = do
-            a  <- unsafeInterleaveM $ unsafeRead arr i
-            as <- unsafeInterleaveM $ getElemsArr arr n (i+1)
-            return (a:as)
+getElems = unsafeIOToM . readElems . toData
 
 -- | Returns whether or not the permutation is valid.  For it to be valid,
 -- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
 -- values @p[0],...,p[n-1]@.
 isValid :: forall p m. (MPermute p m) => p -> m Bool
-isValid p = do
-    n <- getSize p
-    liftM and (validIndices n)
+isValid p = unsafeIOToM $ do
+    liftM and validIndices
   where
-    arr = toData p
+    arr@(PD _ n) = toData p
 
     j `existsIn` i = do
-        seen <- liftM (take i) $ getElems p
+        seen <- liftM (take i) $ readElems arr
         return $ (any (==j)) seen
         
-    isValidIndex n i = do
+    isValidIndex i = do
         i' <- unsafeRead arr i
         valid  <- return $ i' >= 0 && i' < n
         unique <- liftM not (i' `existsIn` i)
         return $ valid && unique
 
-    validIndices n = validIndicesHelp n 0
+    validIndices = validIndicesHelp 0
 
-    validIndicesHelp n i
-        | n == i = return []
+    validIndicesHelp i
+        | i == n = return []
         | otherwise = do
-            a  <- isValidIndex n i
-            as <- unsafeInterleaveM $ validIndicesHelp n (i+1)
+            a  <- isValidIndex i
+            as <- unsafeInterleaveIO $ validIndicesHelp (i+1)
             return (a:as)
 
 -- | Compute the inverse of a permutation.  
@@ -349,16 +422,14 @@ getInverse p = do
 -- @copyInverse inv p@ computes the inverse of @p@ and stores it in @inv@.
 -- The two permutations must have the same size.
 copyInverse :: (MPermute p m) => p -> p -> m ()
-copyInverse q p = do
-    n  <- getSize p
-    n' <- getSize q
+copyInverse q p = unsafeIOToM $ do
     when (n /= n') $ fail "permutation size mismatch"
     forM_ [0..(n-1)] $ \i -> do
         i' <- unsafeRead src i
         unsafeWrite dst i' i
   where
-    src = toData p
-    dst = toData q
+    src@(PD _ n)  = toData p
+    dst@(PD _ n') = toData q
         
 -- | Advance a permutation to the next permutation in lexicogrphic order and
 -- return @True@.  If no further permutaitons are available, return @False@ and
@@ -375,22 +446,22 @@ setPrev :: (MPermute p m) => p -> m Bool
 setPrev = setNextBy (>)
 
 setNextBy :: (MPermute p m) => (Int -> Int -> Bool) -> p -> m Bool
-setNextBy lt p = do
-    n <- getSize p
+setNextBy lt p = unsafeIOToM $ do
     if n > 1
         then do
             findLastAscent (n-2) >>=
                 maybe (return False) (\i -> do
                     i'     <- unsafeRead arr i
                     i1'    <- unsafeRead arr (i+1)
-                    (k,k') <- findSmallestLargerThan n i' (i+2) (i+1) i1'
+                    (k,k') <- findSmallestLargerThan i' (i+2) (i+1) i1'
                     
                     -- swap i and k
                     unsafeWrite arr i k'
                     unsafeWrite arr k i'
                     
+                    
                     forM_ [(i+1)..((n+i) `div` 2)] $ \j ->
-                        unsafeSwapElems p j (n + i - j)
+                        unsafeSwap arr j (n + i - j)
                     
                     return True
                 )
@@ -398,26 +469,28 @@ setNextBy lt p = do
             return False
         
   where
+    n   = inlineGetSize p
     arr = toData p
-    i `gt` j = not (i `lt` j)
+    i `gt` j = {-# SCC "gt" #-} not (i `lt` j)
     
-    findLastAscent i = do
+    findLastAscent i = {-# SCC "findLastAscent" #-} do
         ascent <- isAscent i
         if ascent then return (Just i) else recurse
       where
         recurse = if i /= 0 then findLastAscent (i-1) else return Nothing 
     
-    findSmallestLargerThan !n !i' !j !k !k'
-        | j < n = do
+    findSmallestLargerThan i' j k k'
+        | j < n = {-# SCC "findSmallestLargerThan" #-} do
             j' <- unsafeRead arr j
             if j' `gt` i' && j' `lt` k'
-                then findSmallestLargerThan n i' (j+1) j j'
-                else findSmallestLargerThan n i' (j+1) k k'
+                then findSmallestLargerThan i' (j+1) j j'
+                else findSmallestLargerThan i' (j+1) k k'
         | otherwise =
             return (k,k')
             
-    isAscent i = liftM2 lt (unsafeRead arr i) (unsafeRead arr (i+1))
-    
+    isAscent i = {-# SCC "isAscent" #-} liftM2 lt (unsafeRead arr i) (unsafeRead arr (i+1))
+{-# INLINE setNextBy #-}
+
     
 -- | Get a lazy list of swaps equivalent to the permutation.  A result of
 -- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 <-> j0@, 
@@ -464,43 +537,37 @@ getSwapsHelp inv p = do
 
 -- | Convert a mutable permutation to an immutable one.
 freeze :: (MPermute p m) => p -> m Permute
-freeze = freezeHelp freezePermuteArray
+freeze = freezeHelp newCopyArray
 
 unsafeFreeze :: (MPermute p m) => p -> m Permute
-unsafeFreeze = freezeHelp unsafeFreezePermuteArray
+unsafeFreeze = freezeHelp return
 
-freezeHelp :: (MPermute p m) => (PermuteData p -> m (UArray Int Int))
+freezeHelp :: (MPermute p m) => (PermuteData -> IO PermuteData)
            -> p -> m Permute
-freezeHelp f = liftM Permute . f . toData
+freezeHelp f p = unsafeIOToM $
+    (liftM Permute . f . toData) p
 
 -- | Convert an immutable permutation to a mutable one.
 thaw :: (MPermute p m) => Permute -> m p
-thaw = thawHelp thawPermuteArray
+thaw = thawHelp newCopyArray
 
 unsafeThaw :: (MPermute p m) => Permute -> m p
-unsafeThaw = thawHelp unsafeThawPermuteArray
+unsafeThaw = thawHelp return
 
-thawHelp :: (MPermute p m) => (UArray Int Int -> m (PermuteData p))
+thawHelp :: (MPermute p m) => (PermuteData -> IO PermuteData)
            -> Permute -> m p
-thawHelp t (Permute p) = liftM fromData $ t p
+thawHelp t (Permute p) = unsafeIOToM $ liftM fromData $ t p
 
 
 --------------------------------- Instances ---------------------------------
 
 -- | A mutable permutation that can be manipulated in the 'ST' monad. The
 -- type argument @s@ is the state variable argument for the 'ST' type.
-newtype STPermute s = STPermute (STUArray s Int Int)
+newtype STPermute s = STPermute PermuteData
 
-instance HasPermuteArray (STPermute s) (ST s) where
-    type PermuteArray (STPermute s) = STUArray s
-    
-    freezePermuteArray       = freezeSTUArray
-    unsafeFreezePermuteArray = unsafeFreezeSTUArray
-    thawPermuteArray         = thawSTUArray
-    unsafeThawPermuteArray   = unsafeThawSTUArray
-    
-    
-instance UnsafeInterleaveM (ST s) where
+instance UnsafeIOToM (ST s) where
+    unsafeIOToM = unsafeIOToST
+    {-# INLINE unsafeIOToM #-}
     unsafeInterleaveM = unsafeInterleaveST
     {-# INLINE unsafeInterleaveM #-}
 
@@ -513,20 +580,14 @@ instance MPermute (STPermute s) (ST s) where
 
 
 -- | A mutable permutation that can be manipulated in the 'IO' monad.
-newtype IOPermute = IOPermute (IOUArray Int Int)
+newtype IOPermute = IOPermute PermuteData
 
-instance HasPermuteArray IOPermute IO where
-    type PermuteArray IOPermute = IOUArray
-
-    freezePermuteArray       = freezeIOUArray
-    unsafeFreezePermuteArray = unsafeFreezeIOUArray
-    thawPermuteArray         = thawIOUArray
-    unsafeThawPermuteArray   = unsafeThawIOUArray
-
-
-instance UnsafeInterleaveM IO where
+instance UnsafeIOToM IO where
+    unsafeIOToM = id
+    {-# INLINE unsafeIOToM #-}
     unsafeInterleaveM = unsafeInterleaveIO
     {-# INLINE unsafeInterleaveM #-}
+
     
 instance MPermute IOPermute IO where
     toData (IOPermute a) = a
