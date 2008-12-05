@@ -271,18 +271,26 @@ getInvSwaps = undefined
 
 -- | Convert a mutable permutation to an immutable one
 freeze :: (MPermute p m) => p -> m Permute
-freeze = undefined
+freeze = freezeHelp MArray.freeze
 
 unsafeFreeze :: (MPermute p m) => p -> m Permute
-unsafeFreeze p = 
-    liftM Permute $ MArray.unsafeFreeze $ toData p
+unsafeFreeze = freezeHelp MArray.unsafeFreeze
+
+freezeHelp :: (MPermute p m) => (PermuteData p -> m (UArray Int Int))
+           -> p -> m Permute
+freezeHelp f = liftM Permute . f . toData
 
 -- | Convert an immutable permutation to a mutable one
 thaw :: (MPermute p m) => Permute -> m p
-thaw = undefined
+thaw = thawHelp MArray.thaw
 
 unsafeThaw :: (MPermute p m) => Permute -> m p
-unsafeThaw = undefined
+unsafeThaw = thawHelp MArray.unsafeThaw
+
+thawHelp :: (MPermute p m) => (UArray Int Int -> m (PermuteData p))
+           -> Permute -> m p
+thawHelp t (Permute p) =
+    liftM fromData $ t p
 
 
 --------------------------------- Instances ---------------------------------
