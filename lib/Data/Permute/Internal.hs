@@ -228,16 +228,26 @@ unsafeGetElem p i = unsafeRead (toData p) i
 -- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
 -- permutation @p@.
 swapElems :: (MPermute p m) => p -> Int -> Int -> m ()
-swapElems p i j 
+swapElems = swapElemsHelp MArray.readArray MArray.writeArray
+
+unsafeSwapElems :: (MPermute p m) => p -> Int -> Int -> m ()
+unsafeSwapElems = swapElemsHelp unsafeRead unsafeWrite
+
+swapElemsHelp :: (MPermute p m) 
+              => (PermuteData p -> Int -> m Int)
+              -> (PermuteData p -> Int -> Int -> m ())
+              -> p -> Int -> Int -> m ()
+swapElemsHelp read write p i j 
     | i /= j = do
-        i' <- unsafeRead arr i
-        j' <- unsafeRead arr j
-        unsafeWrite arr i j'
-        unsafeWrite arr j i'
+        i' <- read arr i
+        j' <- read arr j
+        write arr i j'
+        write arr j i'
     | otherwise =
         return ()
   where
     arr = toData p
+
 
 -- | Get the size of a permutation.
 getSize :: (MPermute p m) => p -> m Int

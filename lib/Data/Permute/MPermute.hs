@@ -28,6 +28,7 @@ module Data.Permute.MPermute (
     getElem,
     unsafeGetElem,
     swapElems,
+    unsafeSwapElems,
     
     -- * Permutation properties
     getSize,
