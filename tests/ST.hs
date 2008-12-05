@@ -29,10 +29,16 @@ prop_NewListPermute (ListPermute n is) =
 getElems_S p = (elems p, p)
 prop_GetElems = getElems `implements` getElems_S
 
+getElems'_S p = (elems p, p)
+prop_GetElems' = getElems' `implements` getElems'_S
+
+
+
 tests_STPermute = 
     [ ("newPermute"     , mytest prop_NewPermute)
     , ("newListPermute" , mytest prop_NewListPermute)
     , ("getElems"       , mytest prop_GetElems)
+    , ("getElems'"      , mytest prop_GetElems')
     ]
 
 
