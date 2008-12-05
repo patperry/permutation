@@ -28,4 +28,4 @@ import Data.Permute.MPermute
 -- permutation before returning it - it uses unsafeFreeze internally, but this 
 -- wrapper is a safe interface to that function. 
 runSTPermute :: (forall s. ST s (STPermute s)) -> Permute
-runSTPermute = undefined
+runSTPermute p = runST (p >>= unsafeFreeze)
