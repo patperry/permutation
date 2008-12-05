@@ -213,11 +213,14 @@ unsafeGetPermute = undefined
 -- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
 -- permutation @p@.
 swapElems :: (MPermute p m) => p -> Int -> Int -> m ()
-swapElems p i j = do
-    i' <- unsafeRead arr i
-    j' <- unsafeRead arr j
-    unsafeWrite arr i j'
-    unsafeWrite arr j i'
+swapElems p i j 
+    | i /= j = do
+        i' <- unsafeRead arr i
+        j' <- unsafeRead arr j
+        unsafeWrite arr i j'
+        unsafeWrite arr j i'
+    | otherwise =
+        return ()
   where
     arr = toData p
 
