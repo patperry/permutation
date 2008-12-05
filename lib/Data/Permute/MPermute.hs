@@ -13,9 +13,7 @@
 
 module Data.Permute.MPermute (
     -- * Class of mutable permutation types
-    HasPermuteArray(..),
-    PermuteData,
-    MPermute(..),
+    MPermute,
     
     -- * Constructing mutable permutations
     newPermute,
