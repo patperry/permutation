@@ -42,11 +42,8 @@ permute n = runST $
 -- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
 -- exactly once each.
 listPermute :: Int -> [Int] -> Permute
-listPermute n is = runST $ do
-    p <- newListPermute n is
-    valid <- isValid p
-    when (not valid) $ fail "invalid permutation"
-    unsafeFreeze p
+listPermute n is = runST $
+    unsafeFreeze =<< newListPermute n is
 
 -- | Construct a permutation from a list of swaps.
 -- @invSwapsPermute n ss@ creats a permuation of size @n@ given by the
@@ -171,8 +168,16 @@ newPermute_ n =
 -- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
 -- exactly once each.
 newListPermute :: (MPermute p m) => Int -> [Int] -> m p
-newListPermute n is =
+newListPermute n is = do
+    p <- unsafeNewListPermute n is
+    valid <- isValid p
+    when (not valid) $ fail "invalid permutation"
+    return p
+
+unsafeNewListPermute :: (MPermute p m) => Int -> [Int] -> m p
+unsafeNewListPermute n is =
     liftM fromData $ MArray.newListArray (0,n-1) is
+
 
 -- | Construct a permutation from a list of swaps.
 -- @newInvSwapsPermute n ss@ creates a permuation of size @n@ given by the

@@ -19,6 +19,7 @@ module Data.Permute.MPermute (
     newPermute,
     newPermute_,
     newListPermute,
+    unsafeNewListPermute,
     newInvSwapsPermute,
     unsafeNewInvSwapsPermute,
     newCopyPermute,
