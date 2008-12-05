@@ -504,23 +504,25 @@ getInvSwaps :: (MPermute p m) => p -> m [(Int,Int)]
 getInvSwaps = getSwapsHelp True
 
 getSwapsHelp :: (MPermute p m) => Bool -> p -> m [(Int,Int)]
-getSwapsHelp inv p = do
-    n <- getSize p
+getSwapsHelp inv p = unsafeIOToM $ do
     liftM concat $
         forM [0..(n-1)] $ \i -> do
-            k <- unsafeGetElem p i
+            k <- unsafeRead arr i
             least <- isLeast i k
             if least 
                 then do
-                    i' <- unsafeGetElem p i
+                    i' <- unsafeRead arr i
                     unsafeInterleaveM $ doCycle i i i'
                 else
                     return []
         
   where
+    arr = toData p
+    n   = permuteDataSize arr
+    
     isLeast i k 
         | k > i = do
-            k' <- unsafeGetElem p k
+            k' <- unsafeRead arr k
             isLeast i k'
         | k < i     = return False
         | otherwise = return True
@@ -528,7 +530,7 @@ getSwapsHelp inv p = do
     doCycle start i i'
         | i' == start = return []
         | otherwise = do
-            i'' <- unsafeGetElem p i'
+            i'' <- unsafeRead arr i'
             let s = if inv then (start,i') else (i,i')
             ss <- unsafeInterleaveM $ doCycle start i' i''
             return (s:ss)
