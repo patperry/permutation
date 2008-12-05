@@ -199,16 +199,16 @@ copyPermute = undefined
 setIdentity :: (MPermute p m) => p -> m ()
 setIdentity = undefined
 
--- | @getPermute p i@ gets the value of the @i@th element of the permutation
+-- | @getElem p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
 -- size of the permutation.
-getPermute :: (MPermute p m) => p -> Int -> m Int
-getPermute = undefined
-{-# INLINE getPermute #-}
+getElem :: (MPermute p m) => p -> Int -> m Int
+getElem p i = MArray.readArray (toData p) i
+{-# INLINE getElem #-}
 
-unsafeGetPermute :: (MPermute p m) => p -> Int -> m Int
-unsafeGetPermute = undefined
-{-# INLINE unsafeGetPermute #-}
+unsafeGetElem :: (MPermute p m) => p -> Int -> m Int
+unsafeGetElem p i = unsafeRead (toData p) i
+{-# INLINE unsafeGetElem #-}
 
 -- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
 -- permutation @p@.

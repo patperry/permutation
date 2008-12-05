@@ -25,8 +25,8 @@ module Data.Permute.MPermute (
     setIdentity,
     
     -- * Accessing permutation elements
-    getPermute,
-    unsafeGetPermute,
+    getElem,
+    unsafeGetElem,
     swapElems,
     
     -- * Permutation properties
