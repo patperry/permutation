@@ -23,6 +23,7 @@ import Data.Array.ST ( STUArray )
 import Data.Array.Unboxed hiding ( elems )
 import qualified Data.Array.Unboxed as Array
 
+import System.IO.Unsafe
 
 
 --------------------------------- Permute ---------------------------------
@@ -139,10 +140,13 @@ class HasPermuteArray p where
 -- | The 'Int' array type associated with a permutation type @p@.
 type PermuteData p = PermuteArray p Int Int
 
+class (Monad m) => UnsafeInterleaveM m where
+    unsafeInterleaveM :: m a -> m a
+
 -- | Class for representing a mutable permutation.  The type is parameterized
 -- over the type of the monad, @m@, in which the mutable permutation will be
 -- manipulated.
-class (HasPermuteArray p, MArray (PermuteArray p) Int m) 
+class (HasPermuteArray p, UnsafeInterleaveM m, MArray (PermuteArray p) Int m) 
     => MPermute p m | p -> m, m -> p where
     -- | Get the underlying array that stores the permutation
     toData :: p -> PermuteData p
@@ -317,6 +321,10 @@ newtype STPermute s = STPermute (STUArray s Int Int)
 instance HasPermuteArray (STPermute s) where
     type PermuteArray (STPermute s) = STUArray s
     
+instance UnsafeInterleaveM (ST s) where
+    unsafeInterleaveM = unsafeInterleaveST
+    {-# INLINE unsafeInterleaveM #-}
+
 instance MPermute (STPermute s) (ST s) where
     toData (STPermute a) = a
     {-# INLINE toData #-}
@@ -330,6 +338,10 @@ newtype IOPermute = IOPermute (IOUArray Int Int)
 
 instance HasPermuteArray IOPermute where
     type PermuteArray IOPermute = IOUArray
+
+instance UnsafeInterleaveM IO where
+    unsafeInterleaveM = unsafeInterleaveIO
+    {-# INLINE unsafeInterleaveM #-}
     
 instance MPermute IOPermute IO where
     toData (IOPermute a) = a
