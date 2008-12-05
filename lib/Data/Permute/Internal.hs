@@ -225,11 +225,20 @@ getSize p = liftM ((1+) . snd) $ MArray.getBounds (toData p)
 -- function slightly dangerous if you are modifying the permutation.  See also
 -- 'getElems\''.
 getElems :: (MPermute p m) => p -> m [Int]
-getElems = undefined
+getElems p = do
+    n <- getSize p
+    getElemsArr (toData p) n 0
+  where
+    getElemsArr arr n i 
+        | i == n = return []
+        | otherwise = do
+            a  <- unsafeRead arr i
+            as <- unsafeInterleaveM $ getElemsArr arr n (i+1)
+            return (a:as)
 
 -- | Get a strict list of the permutation elements.
 getElems' :: (MPermute p m) => p -> m [Int]
-getElems' = undefined
+getElems' = MArray.getElems . toData
 
 -- | Returns whether or not the permutation is valid.  For it to be valid,
 -- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
