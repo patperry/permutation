@@ -49,15 +49,16 @@ listPermute n is = runST $ do
     unsafeFreeze p
 
 -- | Construct a permutation from a list of swaps.
--- @swapsPermute n ss@ creats a permuation of size @n@ from the sequence
--- of swaps.  For example, if @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
+-- @invSwapsPermute n ss@ creats a permuation of size @n@ given by the
+-- *inverse* of a sequence of swaps.
+-- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
 -- @i0 \<-> j0@, then 
 -- @i1 \<-> j1@, and so on until
 -- @ik \<-> jk@.
-swapsPermute :: Int -> [(Int,Int)] -> Permute
-swapsPermute n ss = runST $
-    unsafeFreeze =<< newSwapsPermute n ss
+invSwapsPermute :: Int -> [(Int,Int)] -> Permute
+invSwapsPermute n ss = runST $
+    unsafeFreeze =<< newInvSwapsPermute n ss
 
 -- | @apply p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
@@ -176,22 +177,23 @@ newListPermute n is =
     liftM fromData $ MArray.newListArray (0,n-1) is
 
 -- | Construct a permutation from a list of swaps.
--- @newSwapsPermute n ss@ creats a permuation of size @n@ from the sequence
--- of swaps.  For example, if @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
+-- @newInvSwapsPermute n ss@ creates a permuation of size @n@ given by the
+-- *inverse* of a sequence of swaps.
+-- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
 -- @i0 \<-> j0@, then 
 -- @i1 \<-> j1@, and so on until
 -- @ik \<-> jk@.
-newSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-newSwapsPermute = newSwapsPermuteHelp swapElems
+newInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
+newInvSwapsPermute = newInvSwapsPermuteHelp swapElems
 
-unsafeNewSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-unsafeNewSwapsPermute = newSwapsPermuteHelp unsafeSwapElems
+unsafeNewInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
+unsafeNewInvSwapsPermute = newInvSwapsPermuteHelp unsafeSwapElems
 
-newSwapsPermuteHelp :: (MPermute p m) 
-                    => (p -> Int -> Int -> m())
-                    -> Int -> [(Int,Int)] -> m p
-newSwapsPermuteHelp swap n ss = do
+newInvSwapsPermuteHelp :: (MPermute p m) 
+                       => (p -> Int -> Int -> m())
+                       -> Int -> [(Int,Int)] -> m p
+newInvSwapsPermuteHelp swap n ss = do
     p <- newPermute n
     mapM_ (uncurry $ swap p) ss
     return p
@@ -252,8 +254,8 @@ swapElemsHelp read write p i j
     | i /= j = do
         i' <- read arr i
         j' <- read arr j
-        write arr i j'
         write arr j i'
+        write arr i j'
     | otherwise =
         return ()
   where
