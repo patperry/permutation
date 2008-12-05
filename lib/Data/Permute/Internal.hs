@@ -15,7 +15,7 @@ module Data.Permute.Internal
 import Control.Monad
 import Control.Monad.ST
 
-import Data.Array.Base( unsafeAt )
+import Data.Array.Base( unsafeAt, unsafeRead )
 import Data.Array.MArray hiding ( unsafeFreeze, thaw, unsafeThaw )
 import qualified Data.Array.MArray as MArray
 import Data.Array.IO ( IOUArray )
@@ -230,8 +230,23 @@ getElems' = undefined
 -- | Returns whether or not the permutation is valid.  For it to be valid,
 -- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
 -- values @p[0],...,p[n-1]@.
-isValid :: (MPermute p m) => p -> m Bool
-isValid = undefined
+isValid :: forall p m. (MPermute p m) => p -> m Bool
+isValid p = do
+    n <- getSize p
+    liftM and $ mapM (isValidIndex n) [0..(n-1)]
+  where
+    arr = toData p
+
+    j `existsIn` i = do
+        seen <- mapM (unsafeRead arr) [0..(i-1)]
+        return $ (any (==j)) seen
+        
+    isValidIndex n i = do
+        i' <- unsafeRead arr i
+        valid  <- return $ i' >= 0 && i' < n
+        unique <- liftM not (i' `existsIn` i)
+        return $ valid && unique
+
 
 -- | Compute the inverse of a permutation.  
 getInverse :: (MPermute p m, MPermute pi m) => p -> m pi
