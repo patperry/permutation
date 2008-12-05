@@ -248,12 +248,12 @@ swapElemsHelp :: (MPermute p m)
               => (PermuteData p -> Int -> m Int)
               -> (PermuteData p -> Int -> Int -> m ())
               -> p -> Int -> Int -> m ()
-swapElemsHelp read write p i j 
+swapElemsHelp readArr writeArr p i j 
     | i /= j = do
-        i' <- read arr i
-        j' <- read arr j
-        write arr j i'
-        write arr i j'
+        i' <- readArr arr i
+        j' <- readArr arr j
+        writeArr arr j i'
+        writeArr arr i j'
     | otherwise =
         return ()
   where
