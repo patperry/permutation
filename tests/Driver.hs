@@ -95,6 +95,10 @@ instance Arbitrary Swap where
 
     coarbitrary = undefined
 
+instance Arbitrary Ordering where
+    arbitrary   = elements [ LT, GT, EQ ]
+    coarbitrary = coarbitrary . fromEnum
+
 ------------------------------------------------------------------------
 --
 -- QC driver ( taken from xmonad-0.6 )
