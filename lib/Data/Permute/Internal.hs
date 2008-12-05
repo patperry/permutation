@@ -246,12 +246,12 @@ getElems' = MArray.getElems . toData
 isValid :: forall p m. (MPermute p m) => p -> m Bool
 isValid p = do
     n <- getSize p
-    liftM and $ mapM (isValidIndex n) [0..(n-1)]
+    liftM and (validIndices n)
   where
     arr = toData p
 
     j `existsIn` i = do
-        seen <- mapM (unsafeRead arr) [0..(i-1)]
+        seen <- liftM (take i) $ getElems p
         return $ (any (==j)) seen
         
     isValidIndex n i = do
@@ -259,6 +259,15 @@ isValid p = do
         valid  <- return $ i' >= 0 && i' < n
         unique <- liftM not (i' `existsIn` i)
         return $ valid && unique
+
+    validIndices n = validIndicesHelp n 0
+
+    validIndicesHelp n i
+        | n == i = return []
+        | otherwise = do
+            a  <- isValidIndex n i
+            as <- unsafeInterleaveM $ validIndicesHelp n (i+1)
+            return (a:as)
 
 
 -- | Compute the inverse of a permutation.  
