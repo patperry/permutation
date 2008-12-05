@@ -147,3 +147,38 @@ implementsIf pre a f =
         runST ( do
             p' <- unsafeThaw p
             commutes p' a f )
+
+
+commutes2 :: (Eq a, Show a) =>
+    STPermute s -> STPermute s -> (STPermute s -> STPermute s -> ST s a) ->
+        (Permute -> Permute -> (a,Permute,Permute)) -> ST s Bool
+commutes2 p q a f = do
+    oldp <- abstract p
+    oldq <- abstract q
+    r   <- a p q
+    newp <- abstract p
+    newq <- abstract q
+    let s      = f oldp oldq
+        s'     = (r,newp,newq)
+        passed = s == s'
+        
+    when (not passed) $
+        trace (printf ("expected `%s' but got `%s'") (show s) (show s'))
+              return ()
+              
+    return passed
+
+
+implements2 :: (Eq a, Show a) =>
+    (forall s . STPermute s -> STPermute s -> ST s a) ->
+    (Permute -> Permute -> (a,Permute,Permute)) -> 
+        Property
+implements2 a f =
+    forAll arbitrary $ \(Nat n) ->
+    forAll (Test.permute n) $ \p ->
+    forAll (Test.permute n) $ \q ->
+        runST $ do
+            p' <- unsafeThaw p
+            q' <- unsafeThaw q
+            commutes2 p' q' a f
+
