@@ -481,9 +481,7 @@ setNextBy lt p = unsafeIOToM $ do
                     unsafeWrite arr i k'
                     unsafeWrite arr k i'
                     
-                    
-                    forM_ [(i+1)..((n+i) `div` 2)] $ \j ->
-                        unsafeSwap arr j (n + i - j)
+                    reverseElems (i+1) (n-1)
                     
                     return True
                 )
@@ -511,6 +509,12 @@ setNextBy lt p = unsafeIOToM $ do
             return (k,k')
             
     isAscent i = liftM2 lt (unsafeRead arr i) (unsafeRead arr (i+1))
+    
+    reverseElems i j
+        | i >= j = return ()
+        | otherwise = do
+            unsafeSwap arr i j
+            reverseElems (i+1) (j-1)
 {-# INLINE setNextBy #-}
 
     
