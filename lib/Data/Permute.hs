@@ -42,4 +42,29 @@ module Data.Permute (
     
     ) where
 
+import Control.Monad.ST
 import Data.Permute.Internal
+import Data.Permute.ST
+
+-- | Returns a permutation which rearranges its first argument into ascending 
+-- order.  This is a special case of 'orderBy'.
+order :: (Ord a) => [a] -> Permute
+order xs = runST $ 
+    unsafeFreeze =<< getOrder xs
+
+orderBy :: (a -> a -> Ordering) -> [a] -> Permute
+orderBy cmp xs = runST $
+    unsafeFreeze =<< getOrderBy cmp xs
+
+-- | Returns a permutation, the inverse of which rearranges its first argument 
+-- into ascending order. The returned permutation, @p@, has the property that
+-- @p[i]@ is the rank of the @i@th element of the passed-in list. This is a 
+-- special case of 'rankBy'.
+rank :: (Ord a) => [a] -> Permute
+rank xs = runST $
+    unsafeFreeze =<< getRank xs
+
+rankBy :: (a -> a -> Ordering) -> [a] -> Permute
+rankBy cmp xs = runST $
+    unsafeFreeze =<< getRankBy cmp xs
+

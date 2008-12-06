@@ -30,9 +30,12 @@ library
                      Data.Permute.ST
                      Test.Permute
                      
-    other-modules:   Data.Permute.Internal
+    other-modules:   Data.IntArray
+                     Data.Permute.Base
+                     Data.Permute.Internal
+                     
 
-    build-depends:   base, QuickCheck < 2
+    build-depends:   base, ghc-prim, QuickCheck < 2
     extensions:      MultiParamTypeClasses, FunctionalDependencies, 
                      FlexibleContexts, Rank2Types, BangPatterns, CPP
 

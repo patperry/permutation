@@ -25,8 +25,6 @@ import Foreign.ForeignPtr       (mallocForeignPtrBytes)
 
 import Control.Monad
 import Control.Monad.ST
-import Data.Function( on )
-import Data.List( sortBy )
 import Foreign
 
 import System.IO.Unsafe
@@ -34,7 +32,10 @@ import System.IO.Unsafe
 
 class (Monad m) => UnsafeIOToM m where
     unsafeInterleaveM :: m a -> m a
+    {-# INLINE unsafeInterleaveM #-}
+        
     unsafeIOToM :: IO a -> m a
+    {-# INLINE unsafeIOToM #-}
 
 {-# INLINE inlinePerformIO #-}
 inlinePerformIO :: IO a -> a
@@ -249,28 +250,6 @@ invSwaps :: Permute -> [(Int,Int)]
 invSwaps p = runST $
     getInvSwaps =<< unsafeThaw p
 
--- | Returns a permutation which rearranges its first argument into ascending 
--- order.  This is a special case of 'orderBy'.
-order :: (Ord a) => [a] -> Permute
-order xs = runST $ 
-    unsafeFreeze =<< getOrder xs
-
-orderBy :: (a -> a -> Ordering) -> [a] -> Permute
-orderBy cmp xs = runST $
-    unsafeFreeze =<< getOrderBy cmp xs
-
--- | Returns a permutation, the inverse of which rearranges its first argument 
--- into ascending order. The returned permutation, @p@, has the property that
--- @p[i]@ is the rank of the @i@th element of the passed-in list. This is a 
--- special case of 'rankBy'.
-rank :: (Ord a) => [a] -> Permute
-rank xs = runST $
-    unsafeFreeze =<< getRank xs
-
-rankBy :: (a -> a -> Ordering) -> [a] -> Permute
-rankBy cmp xs = runST $
-    unsafeFreeze =<< getRankBy cmp xs
-
 instance Show Permute where
     show p = "listPermute " ++ show (size p) ++ " " ++ show (elems p)
     
@@ -299,6 +278,7 @@ class (UnsafeIOToM m) => MPermute p m | p -> m, m -> p where
 newPermute :: (MPermute p m) => Int -> m p
 newPermute n = unsafeIOToM $
     liftM fromData $ newListArray n [0..]
+{-# INLINE newPermute #-}
 
 -- | Allocate a new permutation but do not initialize it.
 newPermute_ :: (MPermute p m) => Int -> m p
@@ -459,16 +439,18 @@ copyInverse q p = unsafeIOToM $ do
 -- and repeatedly calling @setNext@ will iterate through all permutations of a 
 -- given size.
 setNext :: (MPermute p m) => p -> m Bool
-setNext = setNextBy (<)
+setNext = setNextBy compare
+{-# INLINE setNext #-}
 
 -- | Step backwards to the previous permutation in lexicographic order and
 -- return @True@.  If there is no previous permutation, return @False@ and
 -- leave the permutation unmodified.
 setPrev :: (MPermute p m) => p -> m Bool
-setPrev = setNextBy (>)
+setPrev = setNextBy (flip compare)
+{-# INLINE setPrev #-}
 
-setNextBy :: (MPermute p m) => (Int -> Int -> Bool) -> p -> m Bool
-setNextBy lt p = unsafeIOToM $ do
+setNextBy :: (MPermute p m) => (Int -> Int -> Ordering) -> p -> m Bool
+setNextBy cmp p = unsafeIOToM $ do
     if n > 1
         then do
             findLastAscent (n-2) >>=
@@ -491,7 +473,8 @@ setNextBy lt p = unsafeIOToM $ do
   where
     n   = inlineGetSize p
     arr = toData p
-    i `gt` j = not (i `lt` j)
+    i `lt` j = cmp i j == LT
+    i `gt` j = cmp i j == GT
     
     findLastAscent i = do
         ascent <- isAscent i
@@ -515,8 +498,8 @@ setNextBy lt p = unsafeIOToM $ do
         | otherwise = do
             unsafeSwap arr i j
             reverseElems (i+1) (j-1)
-{-# INLINE setNextBy #-}
-
+{-# SPECIALIZE setNextBy :: (Int -> Int -> Ordering) -> STPermute s -> ST s Bool #-}
+{-# SPECIALIZE setNextBy :: (Int -> Int -> Ordering) -> IOPermute -> IO Bool #-}
     
 -- | Get a lazy list of swaps equivalent to the permutation.  A result of
 -- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 \<-> j0@, 
@@ -561,29 +544,6 @@ getSwapsHelp inv p = unsafeIOToM $ do
             ss <- unsafeInterleaveM $ doCycle start i' i''
             return (s:ss)
         
--- | Returns a permutation which rearranges its first argument into ascending 
--- order.  This is a special case of 'getOrderBy'.
-getOrder :: (Ord a, MPermute p m) => [a] -> m p
-getOrder = getOrderBy compare
-
-getOrderBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
-getOrderBy cmp xs =
-    let is = (fst . unzip . sortBy (cmp `on` snd) . zip [0..]) xs
-        n  = length xs
-    in newListPermute n is
-
--- | Returns a permutation, the inverse of which rearranges its first argument 
--- into ascending order. The returned permutation, @p@, has the property that
--- @p[i]@ is the rank of the @i@th element of the passed-in list. This is a 
--- special case of 'getRankBy'.
-getRank :: (Ord a, MPermute p m) => [a] -> m p
-getRank = getRankBy compare
-
-getRankBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
-getRankBy cmp xs = do
-    p <- getOrderBy cmp xs
-    getInverse p
-
 -- | Convert a mutable permutation to an immutable one.
 freeze :: (MPermute p m) => p -> m Permute
 freeze = freezeHelp newCopyArray

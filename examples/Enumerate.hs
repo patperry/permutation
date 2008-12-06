@@ -9,6 +9,7 @@ import Data.Permute
 import Data.Permute.MPermute
     
 -- | Execute an action on every permutation of a given order.
+{-# INLINE forAllPermutes #-}
 forAllPermutes :: (MPermute p m) => Int -> (Permute -> m ()) -> m ()
 forAllPermutes n a = do
     -- Allocate a mutable permutation initialized to the identity
@@ -31,6 +32,8 @@ forAllPermutes n a = do
         -- If a successor exists, recurse, otherwise stop
         when hasNext $ runOnSuccessors p
 
+
+        
         
 -- | Count the number of permutations of a given order
 countAllPermutes :: Int -> Int
