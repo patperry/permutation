@@ -16,5 +16,5 @@ module Data.Permute.IO (
     module Data.Permute.MPermute
     ) where
 
-import Data.Permute.Internal( IOPermute )
+import Data.Permute.IOBase( IOPermute )
 import Data.Permute.MPermute

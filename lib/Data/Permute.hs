@@ -43,7 +43,7 @@ module Data.Permute (
     ) where
 
 import Control.Monad.ST
-import Data.Permute.Internal
+import Data.Permute.Base
 import Data.Permute.ST
 
 -- | Returns a permutation which rearranges its first argument into ascending 

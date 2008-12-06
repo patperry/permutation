@@ -1,4 +1,6 @@
+{-# LANGUAGE Rank2Types #-}
 {-# OPTIONS_GHC -XMagicHash -XUnboxedTuples #-}
+{-# OPTIONS_HADDOCK hide #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module     : Data.Permute.Base
@@ -13,8 +15,6 @@ module Data.Permute.Base
 
 import Control.Monad
 import Control.Monad.ST
-import Data.Function( on )
-import Data.List( sortBy )
 import Foreign
 
 import Data.IntArray ( IntArray, STIntArray )
@@ -25,6 +25,10 @@ import qualified Data.IntArray as ArrST
 --------------------------------- Permute ---------------------------------
 
 -- | The immutable permutation data type.
+-- Internally, a permutation of size @n@ is stored as an
+-- @0@-based array of @n@ 'Int's.  The permutation represents a reordering of
+-- the integers @0, ..., (n-1)@.  The @i@th element of the array stores
+-- the value @p[i]@. 
 newtype Permute = Permute IntArray
 
 -- | Construct an identity permutation of the given size.
@@ -416,7 +420,7 @@ unsafeFreezeSTPermute :: STPermute s -> ST s Permute
 unsafeFreezeSTPermute = freezeHelp ArrST.unsafeFreeze
 {-# INLINE unsafeFreezeSTPermute #-}
 
-freezeHelp :: (forall s. STIntArray s -> ST s IntArray)
+freezeHelp :: (STIntArray s -> ST s IntArray)
            -> STPermute s -> ST s Permute
 freezeHelp f (STPermute p) = (liftM Permute . f) p
 {-# INLINE freezeHelp #-}
@@ -430,7 +434,7 @@ unsafeThawSTPermute :: Permute -> ST s (STPermute s)
 unsafeThawSTPermute = thawHelp ArrST.unsafeThaw
 {-# INLINE unsafeThawSTPermute #-}
 
-thawHelp :: (forall s. IntArray -> ST s (STIntArray s))
+thawHelp :: (IntArray -> ST s (STIntArray s))
            -> Permute -> ST s (STPermute s)
 thawHelp t (Permute p) = liftM STPermute $ t p
 {-# INLINE thawHelp #-}

@@ -25,15 +25,15 @@ extra-source-files:  examples/Enumerate.hs
 library
     hs-source-dirs:  lib
     exposed-modules: Data.Permute
+                     Data.Permute.Base
+                     Data.Permute.IOBase
                      Data.Permute.MPermute
+                     Data.Permute.MPermute.Base
                      Data.Permute.IO
                      Data.Permute.ST
                      Test.Permute
                      
     other-modules:   Data.IntArray
-                     Data.Permute.Base
-                     Data.Permute.IOBase
-                     Data.Permute.Internal
                      
 
     build-depends:   base, ghc-prim, QuickCheck < 2

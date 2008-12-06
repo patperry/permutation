@@ -20,7 +20,7 @@ module Data.Permute.ST (
 
 import Control.Monad.ST
 
-import Data.Permute.Internal
+import Data.Permute.Base( Permute, STPermute, unsafeFreezeSTPermute )
 import Data.Permute.MPermute
 
 -- | A safe way to create and work with a mutable permutation before returning 
@@ -28,4 +28,5 @@ import Data.Permute.MPermute
 -- permutation before returning it - it uses unsafeFreeze internally, but this 
 -- wrapper is a safe interface to that function. 
 runSTPermute :: (forall s. ST s (STPermute s)) -> Permute
-runSTPermute p = runST (p >>= unsafeFreeze)
+runSTPermute p = runST (p >>= unsafeFreezeSTPermute)
+{-# INLINE runSTPermute #-}
