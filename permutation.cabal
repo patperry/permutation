@@ -32,6 +32,7 @@ library
                      
     other-modules:   Data.IntArray
                      Data.Permute.Base
+                     Data.Permute.IOBase
                      Data.Permute.Internal
                      
 
