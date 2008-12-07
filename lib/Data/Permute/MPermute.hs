@@ -378,43 +378,45 @@ thaw :: (MPermute p m) => Permute -> m p
 thaw p = newCopyPermute =<< unsafeThaw p
 {-# INLINE thaw #-}
 
--- | Sorts a list and returns a permutation with transforms the original list
--- into sorted order.  This is a special case of 'getSortBy'.
-getSort :: (Ord a, MPermute p m) => [a] -> m ([a], p)
+-- | @getSort n xs@ sorts the first @n@ elements of @xs@ and returns a 
+-- permutation which transforms @xs@ into sorted order.  The results are
+-- undefined if @n@ is greater than the length of @xs@.  This is a special 
+-- case of 'getSortBy'.
+getSort :: (Ord a, MPermute p m) => Int -> [a] -> m ([a], p)
 getSort = getSortBy compare
 {-# INLINE getSort #-}
     
-getSortBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m ([a], p)
-getSortBy cmp xs =
-    let (is,xs') = (unzip . List.sortBy (cmp `on` snd) . zip [0..]) xs
-        n        = length is
-    in liftM ((,) xs') $ unsafeNewListPermute n is
+getSortBy :: (MPermute p m) => (a -> a -> Ordering) -> Int -> [a] -> m ([a], p)
+getSortBy cmp n xs =
+    let ys       = take n xs
+        (is,ys') = (unzip . List.sortBy (cmp `on` snd) . zip [0..]) ys
+    in liftM ((,) ys') $ unsafeNewListPermute n is
 {-# INLINE getSortBy #-}
 
--- | Returns a permutation which rearranges its first argument into ascending 
--- order.  This is a special case of 'getOrderBy'.
-getOrder :: (Ord a, MPermute p m) => [a] -> m p
+-- | @getOrder n xs@ returns a permutation which rearranges the first @n@
+-- elements of @xs@ into ascending order. The results are undefined if @n@ is 
+-- greater than the length of @xs@.  This is a special case of 'getOrderBy'.
+getOrder :: (Ord a, MPermute p m) => Int -> [a] -> m p
 getOrder = getOrderBy compare
 {-# INLINE getOrder #-}
 
-getOrderBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
-getOrderBy cmp xs =
-    let is = (fst . unzip . List.sortBy (cmp `on` snd) . zip [0..]) xs
-        n  = length xs
-    in unsafeNewListPermute n is
+getOrderBy :: (MPermute p m) => (a -> a -> Ordering) -> Int -> [a] -> m p
+getOrderBy cmp n xs =
+    liftM snd $ getSortBy cmp n xs
 {-# INLINE getOrderBy #-}
 
--- | Returns a permutation, the inverse of which rearranges its first argument 
--- into ascending order. The returned permutation, @p@, has the property that
--- @p[i]@ is the rank of the @i@th element of the passed-in list. This is a 
--- special case of 'getRankBy'.
-getRank :: (Ord a, MPermute p m) => [a] -> m p
+-- | @getRank n xs@ eturns a permutation, the inverse of which rearranges the 
+-- first @n@ elements of @xs@ into ascending order. The returned permutation, 
+-- @p@, has the property that @p[i]@ is the rank of the @i@th element of @xs@. 
+-- The results are undefined if @n@ is greater than the length of @xs@.
+-- This is a special case of 'getRankBy'.  
+getRank :: (Ord a, MPermute p m) => Int -> [a] -> m p
 getRank = getRankBy compare
 {-# INLINE getRank #-}
 
-getRankBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
-getRankBy cmp xs = do
-    p <- getOrderBy cmp xs
+getRankBy :: (MPermute p m) => (a -> a -> Ordering) -> Int -> [a] -> m p
+getRankBy cmp n xs = do
+    p <- getOrderBy cmp n xs
     getInverse p
 {-# INLINE getRankBy #-}
 

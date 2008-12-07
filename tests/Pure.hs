@@ -94,27 +94,35 @@ prop_prev_next (p :: Permute) =
   where
     n = size p
 
-prop_fst_sort (xs :: [Int]) =
-    (fst . sort) xs == (List.sort xs)
-prop_snd_sort (xs :: [Int]) =
-    applySwaps (swaps $ snd $ sort xs) xs == (List.sort xs)
+prop_fst_sort (Sort n xs) = let
+    ys = take n xs
+    in (fst . sort n) xs == (List.sort ys)
+prop_snd_sort (Sort n xs) = let
+    ys = take n xs
+    in applySwaps (swaps $ snd $ sort n xs) ys == (List.sort ys)
 
-prop_fst_sortBy cmp (xs :: [Int]) =
-    (fst . sortBy cmp) xs == (List.sortBy cmp xs)
-prop_snd_sortBy cmp (xs :: [Int]) =
-    applySwaps (swaps $ snd $ sortBy cmp xs) xs == (List.sortBy cmp xs)
+prop_fst_sortBy (SortBy cmp n xs) = let 
+    ys = take n xs
+    in (fst . sortBy cmp n) xs == (List.sortBy cmp ys)
+prop_snd_sortBy (SortBy cmp n xs) = let 
+    ys = take n xs
+    in applySwaps (swaps $ snd $ sortBy cmp n xs) ys == (List.sortBy cmp ys)
 
-prop_order (xs :: [Int]) =
-    applySwaps (swaps $ order xs) xs == (List.sort xs)
+prop_order (Sort n xs) = let 
+    ys = take n xs
+    in applySwaps (swaps $ order n xs) ys == (List.sort ys)
 
-prop_orderBy cmp (xs :: [Int]) =
-    applySwaps (swaps $ orderBy cmp xs) xs == (List.sortBy cmp xs)
+prop_orderBy (SortBy cmp n xs) = let 
+    ys = take n xs
+    in applySwaps (swaps $ orderBy cmp n xs) ys == (List.sortBy cmp ys)
 
-prop_rank (xs :: [Int]) =
-    applySwaps (invSwaps $ rank xs) xs == (List.sort xs)
+prop_rank (Sort n xs) = let
+    ys = take n xs
+    in applySwaps (invSwaps $ rank n xs) ys == (List.sort ys)
 
-prop_rankBy cmp (xs :: [Int]) =
-    applySwaps (invSwaps $ rankBy cmp xs) xs == (List.sortBy cmp xs)
+prop_rankBy (SortBy cmp n xs) = let
+    ys = take n xs
+    in applySwaps (invSwaps $ rankBy cmp n xs) ys == (List.sortBy cmp ys)
 
 prop_swapsPermute_swaps (p :: Permute) =
     swapsPermute (size p) (swaps p) == p

@@ -125,38 +125,44 @@ invSwaps :: Permute -> [(Int,Int)]
 invSwaps p = runST $
     getInvSwaps =<< unsafeThaw p
 
--- | Sorts a list and returns a permutation with transforms the original list
--- into sorted order.  This is a special case of 'sortBy'.
-sort :: (Ord a) => [a] -> ([a], Permute)
-sort xs = runST $ do
-    (xs',mp) <- getSort xs
+
+-- | @sort n xs@ sorts the first @n@ elements of @xs@ and returns a 
+-- permutation which transforms @xs@ into sorted order.  The results are
+-- undefined if @n@ is greater than the length of @xs@.  This is a special 
+-- case of 'sortBy'.
+sort :: (Ord a) => Int -> [a] -> ([a], Permute)
+sort n xs = runST $ do
+    (xs',mp) <- getSort n xs
     p <- unsafeFreeze mp
     return (xs',p)
     
-sortBy :: (a -> a -> Ordering) -> [a] -> ([a], Permute)
-sortBy cmp xs = runST $ do
-    (xs',mp) <- getSortBy cmp xs
+sortBy :: (a -> a -> Ordering) -> Int -> [a] -> ([a], Permute)
+sortBy cmp n xs = runST $ do
+    (xs',mp) <- getSortBy cmp n xs
     p <- unsafeFreeze mp
     return (xs',p)
 
--- | Returns a permutation which rearranges its first argument into ascending 
--- order.  This is a special case of 'orderBy'.
-order :: (Ord a) => [a] -> Permute
-order xs = runST $ 
-    unsafeFreeze =<< getOrder xs
 
-orderBy :: (a -> a -> Ordering) -> [a] -> Permute
-orderBy cmp xs = runST $
-    unsafeFreeze =<< getOrderBy cmp xs
+-- | @order n xs@ returns a permutation which rearranges the first @n@
+-- elements of @xs@ into ascending order. The results are undefined if @n@ is 
+-- greater than the length of @xs@.  This is a special case of 'orderBy'.
+order :: (Ord a) => Int -> [a] -> Permute
+order n xs = runST $ 
+    unsafeFreeze =<< getOrder n xs
 
--- | Returns a permutation, the inverse of which rearranges its first argument 
--- into ascending order. The returned permutation, @p@, has the property that
--- @p[i]@ is the rank of the @i@th element of the passed-in list. This is a 
--- special case of 'rankBy'.
-rank :: (Ord a) => [a] -> Permute
-rank xs = runST $
-    unsafeFreeze =<< getRank xs
+orderBy :: (a -> a -> Ordering) -> Int -> [a] -> Permute
+orderBy cmp n xs = runST $
+    unsafeFreeze =<< getOrderBy cmp n xs
 
-rankBy :: (a -> a -> Ordering) -> [a] -> Permute
-rankBy cmp xs = runST $
-    unsafeFreeze =<< getRankBy cmp xs
+-- | @rank n xs@ eturns a permutation, the inverse of which rearranges the 
+-- first @n@ elements of @xs@ into ascending order. The returned permutation, 
+-- @p@, has the property that @p[i]@ is the rank of the @i@th element of @xs@. 
+-- The results are undefined if @n@ is greater than the length of @xs@.
+-- This is a special case of 'rankBy'.  
+rank :: (Ord a) => Int -> [a] -> Permute
+rank n xs = runST $
+    unsafeFreeze =<< getRank n xs
+
+rankBy :: (a -> a -> Ordering) -> Int -> [a] -> Permute
+rankBy cmp n xs = runST $
+    unsafeFreeze =<< getRankBy cmp n xs

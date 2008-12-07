@@ -12,6 +12,8 @@ module Driver (
     Index(..),
     ListPermute(..),
     SwapsPermute(..),
+    Sort(..),
+    SortBy(..),
     Swap(..),
     
     mytest,
@@ -53,9 +55,9 @@ instance Arbitrary Natural where
 data Index = Index Int Int deriving (Eq,Show)
 instance Arbitrary Index where
     arbitrary = do
-        n <- arbitrary
-        i <- choose (0, abs n)
-        return $ Index (abs n + 1) i
+        (Nat n) <- arbitrary
+        i <- choose (0, n)
+        return $ Index (n + 1) i
 
     coarbitrary = undefined
 
@@ -98,6 +100,25 @@ instance Arbitrary Swap where
 instance Arbitrary Ordering where
     arbitrary   = elements [ LT, GT, EQ ]
     coarbitrary = coarbitrary . fromEnum
+
+data Sort = Sort Int [Int] deriving (Eq,Show)
+instance Arbitrary Sort where
+    arbitrary = do
+        (Index n i) <- arbitrary
+        xs <- vector n
+        return $ Sort i xs
+        
+    coarbitrary = undefined
+
+data SortBy = SortBy (Int -> Int -> Ordering) Int [Int] deriving (Show)
+instance Arbitrary SortBy where
+    arbitrary = do
+        cmp <- arbitrary
+        (Sort n xs) <- arbitrary
+        return $ SortBy cmp n xs
+    
+    coarbitrary = undefined
+
 
 ------------------------------------------------------------------------
 --
