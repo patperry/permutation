@@ -379,7 +379,7 @@ thaw p = newCopyPermute =<< unsafeThaw p
 {-# INLINE thaw #-}
 
 -- | Sorts a list and returns a permutation with transforms the original list
--- into sorted order.  This is a special case of 'sortBy'.
+-- into sorted order.  This is a special case of 'getSortBy'.
 getSort :: (Ord a, MPermute p m) => [a] -> m ([a], p)
 getSort = getSortBy compare
 {-# INLINE getSort #-}
