@@ -13,6 +13,7 @@ module Data.IntArray (
     IntArray,
     STIntArray,
 
+    listArray,
     numElements,
     (!),
     unsafeAt,
@@ -54,6 +55,12 @@ infixl 9 !
 -----------------------------  Immutable arrays -----------------------------
 
 data IntArray = IntArray !Int (ByteArray#)
+
+{-# INLINE listArray #-}
+listArray :: Int -> [Int] -> IntArray
+listArray n es = runST $ do
+    arr <- newListArray n es
+    unsafeFreeze arr
 
 {-# INLINE numElements #-}
 numElements :: IntArray -> Int
