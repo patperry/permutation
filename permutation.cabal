@@ -28,16 +28,14 @@ library
                      Data.Permute.Base
                      Data.Permute.IOBase
                      Data.Permute.MPermute
-                     Data.Permute.MPermute.Base
                      Data.Permute.IO
                      Data.Permute.ST
                      Test.Permute
                      
     other-modules:   Data.IntArray
-                     
 
     build-depends:   base, ghc-prim, QuickCheck < 2
     extensions:      MultiParamTypeClasses, FunctionalDependencies, 
-                     FlexibleContexts, Rank2Types, BangPatterns, CPP
+                     FlexibleContexts, Rank2Types
 
     ghc-options:     -Wall
