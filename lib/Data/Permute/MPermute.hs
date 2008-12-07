@@ -388,7 +388,7 @@ getSortBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m ([a], p)
 getSortBy cmp xs =
     let (is,xs') = (unzip . List.sortBy (cmp `on` snd) . zip [0..]) xs
         n        = length is
-    in liftM ((,) xs') $ newListPermute n is
+    in liftM ((,) xs') $ unsafeNewListPermute n is
 {-# INLINE getSortBy #-}
 
 -- | Returns a permutation which rearranges its first argument into ascending 
@@ -401,7 +401,7 @@ getOrderBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
 getOrderBy cmp xs =
     let is = (fst . unzip . List.sortBy (cmp `on` snd) . zip [0..]) xs
         n  = length xs
-    in newListPermute n is
+    in unsafeNewListPermute n is
 {-# INLINE getOrderBy #-}
 
 -- | Returns a permutation, the inverse of which rearranges its first argument 
