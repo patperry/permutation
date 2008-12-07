@@ -13,34 +13,22 @@ module Data.IntArray (
     IntArray,
     STIntArray,
 
-    listArray,
     numElements,
-    (!),
     unsafeAt,
     elems,
 
     newArray_,
-    newListArray,
-    newCopyArray,
-    copyArray,
-    unsafeCopy,
     
     numElementsSTIntArray,
     getNumElements,
-    readArray,
     unsafeRead,
-    writeArray,
     unsafeWrite,
-    swapArray,
     unsafeSwap,
     
     readElems,
-    readElems',
     writeElems,
     
-    freeze,
     unsafeFreeze,
-    thaw,
     unsafeThaw,
     
     ) where
@@ -50,28 +38,13 @@ import GHC.Types
 import GHC.ST
 import Foreign( sizeOf )
 
-infixl 9 !
-
 -----------------------------  Immutable arrays -----------------------------
 
 data IntArray = IntArray !Int (ByteArray#)
 
-{-# INLINE listArray #-}
-listArray :: Int -> [Int] -> IntArray
-listArray n es = runST $ do
-    arr <- newListArray n es
-    unsafeFreeze arr
-
 {-# INLINE numElements #-}
 numElements :: IntArray -> Int
 numElements (IntArray n _) = n
-
-{-# INLINE (!) #-}
-(!) :: IntArray -> Int -> Int
-(!) arr@(IntArray (I# n#) _) i@(I# i#) =
-    if i# >=# 0# && i# <# n#
-        then unsafeAt arr i
-        else error "(!): Invalid index"
 
 {-# INLINE unsafeAt #-}
 unsafeAt :: IntArray -> Int -> Int
@@ -98,39 +71,6 @@ newArray_ n@(I# n#) =
   where
     sizeOfInt = case sizeOf (0 :: Int) of (I# s#) -> s#
     
-{-# INLINE newListArray #-}
-newListArray :: Int -> [Int] -> ST s (STIntArray s)
-newListArray n es = do
-    arr <- newArray_ n
-    writeElems arr es
-    return arr
-
-{-# INLINE newCopyArray #-}
-newCopyArray :: STIntArray s -> ST s (STIntArray s)
-newCopyArray src@(STIntArray n _) = do
-    dst <- newArray_ n
-    unsafeCopy dst src
-    return dst
-
-{-# INLINE copyArray #-}
-copyArray :: STIntArray s -> STIntArray s -> ST s ()
-copyArray dst@(STIntArray (I# n#) _) src@(STIntArray (I# m#) _) =
-    if n# ==# m# 
-        then unsafeCopy dst src
-        else fail "copyArray: size mismatch"
-
-{-# INLINE unsafeCopy #-}
-unsafeCopy :: STIntArray s -> STIntArray s -> ST s ()
-unsafeCopy (STIntArray (I# n#) dst#) (STIntArray _ src#) =
-    ST $ \s1# ->
-        let copyElems i# s2# | i# ==# n# = s2#
-                             | otherwise =
-                case readIntArray#  src# i# s2#    of { (# s3#, e# #) ->
-                case writeIntArray# dst# i# e# s3# of { s4# ->
-                copyElems (i# +# 1#) s4# }} in
-        case copyElems 0# s1# of { s2# ->
-        (# s2#, () #) }
-
 {-# INLINE numElementsSTIntArray #-}
 numElementsSTIntArray :: STIntArray s -> Int
 numElementsSTIntArray (STIntArray n _) = n
@@ -138,13 +78,6 @@ numElementsSTIntArray (STIntArray n _) = n
 {-# INLINE getNumElements #-}
 getNumElements :: STIntArray s -> ST s Int
 getNumElements arr = return $! numElementsSTIntArray arr
-
-{-# INLINE readArray #-}
-readArray :: STIntArray s -> Int -> ST s Int
-readArray marr@(STIntArray (I# n#) _) i@(I# i#) =
-    if i# >=# 0# && i# <# n#
-        then unsafeRead marr i
-        else fail "readArray: invalid index"
 
 {-# INLINE unsafeRead #-}
 unsafeRead :: STIntArray s -> Int -> ST s Int
@@ -154,26 +87,12 @@ unsafeRead (STIntArray _ marr#) (I# i#) =
         let e = I# e# in
         (# s2#, e #) }
 
-{-# INLINE writeArray #-}
-writeArray :: STIntArray s -> Int -> Int -> ST s ()
-writeArray marr@(STIntArray (I# n#) _) i@(I# i#) e =
-    if i# >=# 0# && i# <# n#
-        then unsafeWrite marr i e
-        else fail "writeArray: invalid index"
-
 {-# INLINE unsafeWrite #-}
 unsafeWrite :: STIntArray s -> Int -> Int -> ST s ()
 unsafeWrite (STIntArray _ marr#) (I# i#) (I# e#) =
     ST $ \s1# -> 
         case writeIntArray# marr# i# e# s1# of { s2# ->
         (# s2#, () #) }
-
-{-# INLINE swapArray #-}
-swapArray :: STIntArray s -> Int -> Int -> ST s ()
-swapArray marr@(STIntArray (I# n#) _) i@(I# i#) j@(I# j#) =
-    if i# >=# 0# && i# <# n# && j# >=# 0# && j# <# n#
-        then unsafeSwap marr i j
-        else fail "swapArray: invalid index"
 
 {-# INLINE unsafeSwap #-}
 unsafeSwap :: STIntArray s -> Int -> Int -> ST s ()
@@ -201,12 +120,6 @@ readElems (STIntArray (I# n#) marr#) =
         case inlineReadList 0# of { es ->
         (# s1#, es #)}
         
-{-# INLINE readElems' #-}        
-readElems' :: STIntArray s -> ST s [Int]
-readElems' marr = let
-    n = numElementsSTIntArray marr in
-    sequence [ unsafeRead marr i | i <- [0 .. n-1]]
-
 {-# INLINE writeElems #-}
 writeElems :: STIntArray s -> [Int] -> ST s ()
 writeElems (STIntArray (I# n#) marr#) es =
@@ -219,12 +132,6 @@ writeElems (STIntArray (I# n#) marr#) es =
         case fillFromList 0# es s1# of { s2# ->
         (# s2#, () #) }
 
-{-# INLINE freeze #-}
-freeze :: STIntArray s -> ST s IntArray
-freeze marr = do
-    marr' <- newCopyArray marr
-    unsafeFreeze marr'
-
 {-# INLINE unsafeFreeze #-}
 unsafeFreeze :: STIntArray s -> ST s IntArray
 unsafeFreeze (STIntArray n marr#) =
@@ -232,12 +139,6 @@ unsafeFreeze (STIntArray n marr#) =
         case unsafeFreezeByteArray# marr# s1# of { (# s2#, arr# #) ->
         let arr = IntArray n arr# in
         (# s2#, arr #)}
-
-{-# INLINE thaw #-}
-thaw :: IntArray -> ST s (STIntArray s)
-thaw arr = do
-    marr <- unsafeThaw arr
-    newCopyArray marr
 
 {-# INLINE unsafeThaw #-}
 unsafeThaw :: IntArray -> ST s (STIntArray s)

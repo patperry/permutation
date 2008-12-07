@@ -44,8 +44,7 @@ unsafeSetElemIOPermute (IOPermute p) i x = stToIO $ unsafeSetElemSTPermute p i x
 {-# INLINE unsafeSetElemIOPermute #-}
 
 unsafeSwapElemsIOPermute :: IOPermute -> Int -> Int -> IO ()
-unsafeSwapElemsIOPermute (IOPermute p) i j = stToIO $
-    unsafeSwapElemsSTPermute p i j
+unsafeSwapElemsIOPermute (IOPermute p) i j = stToIO $ unsafeSwapElemsSTPermute p i j
 {-# INLINE unsafeSwapElemsIOPermute #-}
 
 getElemsIOPermute :: IOPermute -> IO [Int]

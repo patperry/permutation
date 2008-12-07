@@ -59,11 +59,11 @@ instance Eq Permute where
 newtype STPermute s = STPermute (STIntArray s)
 
 getSizeSTPermute :: STPermute s -> ST s Int
-getSizeSTPermute p = return $! sizeSTPermute p
+getSizeSTPermute (STPermute marr) = ArrST.getNumElements marr
 {-# INLINE getSizeSTPermute #-}
 
 sizeSTPermute :: STPermute s -> Int
-sizeSTPermute (STPermute p) = ArrST.numElementsSTIntArray p
+sizeSTPermute (STPermute marr) = ArrST.numElementsSTIntArray marr
 {-# INLINE sizeSTPermute #-}
 
 newSTPermute :: Int -> ST s (STPermute s)
