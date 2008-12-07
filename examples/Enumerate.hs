@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns, Rank2Types #-}
 module Main where
     
 import Control.Monad
@@ -10,7 +9,15 @@ import System.Environment
 import Data.Permute
 import Data.Permute.MPermute
     
--- | Execute an action on every permutation of a given order.
+-- | Execute an action on every permutation of a given order.  This function
+-- is unsafe, because it only allocates space for a single permutation.  The
+-- action @f@ should not retain any references to the passed-in @Permute@
+-- object, otherwise bad things will happen.  For instance, running
+-- >
+-- >    forAllPermutes 2 id
+-- >
+-- in ghci yields @[listPermute 2 [1,0],listPermute 2 [1,0]]@.
+--
 forAllPermutes :: Int -> (Permute -> a) -> [a]
 forAllPermutes n f = runST $ do
     -- Allocate a mutable permutation initialized to the identity
@@ -30,25 +37,20 @@ forAllPermutes n f = runST $ do
         
         -- If a successor exists, recurse, otherwise stop
         as <- unsafeInterleaveST $
-            if hasNext then runOnSuccessors p
+            if hasNext then runOnSuccessors p 
                        else return []
-        
         return (a:as)
-{-# INLINE forAllPermutes #-}
 
-{-# INLINE forAllPermutesM #-}
-forAllPermutesM :: (MPermute p m) => Int -> (Permute -> m a) -> m [a]
-forAllPermutesM n f = sequence $ forAllPermutes n f
 
-{-# INLINE forAllPermutesM_ #-}
 forAllPermutesM_ :: (MPermute p m) => Int -> (Permute -> m a) -> m () 
 forAllPermutesM_ n f = sequence_ $ forAllPermutes n f
+{-# INLINE forAllPermutesM_ #-}
 
 -- | Count the number of permutations of a given order
 countAllPermutes :: Int -> Int
 countAllPermutes n = length $ forAllPermutes n id
 
-
+-- | Another version of the same function.  This one is slightly slower.
 countAllPermutes2 :: Int -> Int
 countAllPermutes2 n = runST $ do
     count <- newSTRef 0
@@ -59,19 +61,17 @@ countAllPermutes2 n = runST $ do
         old <- readSTRef var
         writeSTRef var $! f old
 
+-- | Yet another version, this time using 'permutations' from Data.List.
+-- This version is faster but uses more memory.
 countAllPermutes3 :: Int -> Int
-countAllPermutes3 n = length $ permutations [1..n]
-        
+countAllPermutes3 n = length $ permutations [0 .. n-1]
+
+
 -- | Print all permutations of a given order.
 printAllPermutes :: Int -> IO ()
 printAllPermutes n =
     forAllPermutesM_ n (putStrLn . show . elems)
 
-printAllPermutes2 :: Int -> IO ()
-printAllPermutes2 n =
-    sequence_ [ (putStrLn . show) p | p <- permutations [ 0 .. n-1 ] ]
-    -- forAllPermutesM_ n (putStrLn . show . elems)
-    
 
 main = do
     n  <- fmap (read . head) getArgs
