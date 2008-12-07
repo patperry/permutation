@@ -36,6 +36,8 @@ module Data.Permute (
     invSwaps,
     
     -- * Sorting
+    sort,
+    sortBy,
     order,
     orderBy,
     rank,
@@ -122,6 +124,20 @@ swaps p = runST $
 invSwaps :: Permute -> [(Int,Int)]
 invSwaps p = runST $
     getInvSwaps =<< unsafeThaw p
+
+-- | Sorts a list and returns a permutation with transforms the original list
+-- into sorted order.  This is a special case of 'sortBy'.
+sort :: (Ord a) => [a] -> ([a], Permute)
+sort xs = runST $ do
+    (xs',mp) <- getSort xs
+    p <- unsafeFreeze mp
+    return (xs',p)
+    
+sortBy :: (a -> a -> Ordering) -> [a] -> ([a], Permute)
+sortBy cmp xs = runST $ do
+    (xs',mp) <- getSortBy cmp xs
+    p <- unsafeFreeze mp
+    return (xs',p)
 
 -- | Returns a permutation which rearranges its first argument into ascending 
 -- order.  This is a special case of 'orderBy'.

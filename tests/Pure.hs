@@ -5,7 +5,8 @@ module Pure (
     
 import Control.Monad.ST
 import Data.Array.ST
-import Data.List( foldl', sort, sortBy )
+import Data.List( foldl' )
+import qualified Data.List as List
 import Data.Maybe( fromJust )
 
 import Data.Permute
@@ -94,16 +95,16 @@ prop_prev_next (p :: Permute) =
     n = size p
 
 prop_order (xs :: [Int]) =
-    applySwaps (swaps $ order xs) xs == (sort xs)
+    applySwaps (swaps $ order xs) xs == (List.sort xs)
 
 prop_orderBy cmp (xs :: [Int]) =
-    applySwaps (swaps $ orderBy cmp xs) xs == (sortBy cmp xs)
+    applySwaps (swaps $ orderBy cmp xs) xs == (List.sortBy cmp xs)
 
 prop_rank (xs :: [Int]) =
-    applySwaps (invSwaps $ rank xs) xs == (sort xs)
+    applySwaps (invSwaps $ rank xs) xs == (List.sort xs)
 
 prop_rankBy cmp (xs :: [Int]) =
-    applySwaps (invSwaps $ rankBy cmp xs) xs == (sortBy cmp xs)
+    applySwaps (invSwaps $ rankBy cmp xs) xs == (List.sortBy cmp xs)
 
 
 tests_Permute = 

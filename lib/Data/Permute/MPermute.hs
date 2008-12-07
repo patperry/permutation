@@ -47,6 +47,8 @@ module Data.Permute.MPermute (
     getInvSwaps,
     
     -- * Sorting
+    getSort,
+    getSortBy,
     getOrder,
     getOrderBy,
     getRank,
@@ -70,7 +72,7 @@ module Data.Permute.MPermute (
 import Control.Monad
 import Control.Monad.ST
 import Data.Function( on )
-import Data.List( sortBy )
+import qualified Data.List as List
 import System.IO.Unsafe( unsafeInterleaveIO )
 
 import Data.Permute.Base
@@ -376,6 +378,19 @@ thaw :: (MPermute p m) => Permute -> m p
 thaw p = newCopyPermute =<< unsafeThaw p
 {-# INLINE thaw #-}
 
+-- | Sorts a list and returns a permutation with transforms the original list
+-- into sorted order.  This is a special case of 'sortBy'.
+getSort :: (Ord a, MPermute p m) => [a] -> m ([a], p)
+getSort = getSortBy compare
+{-# INLINE getSort #-}
+    
+getSortBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m ([a], p)
+getSortBy cmp xs =
+    let (is,xs') = (unzip . List.sortBy (cmp `on` snd) . zip [0..]) xs
+        n        = length is
+    in liftM ((,) xs') $ newListPermute n is
+{-# INLINE getSortBy #-}
+
 -- | Returns a permutation which rearranges its first argument into ascending 
 -- order.  This is a special case of 'getOrderBy'.
 getOrder :: (Ord a, MPermute p m) => [a] -> m p
@@ -384,7 +399,7 @@ getOrder = getOrderBy compare
 
 getOrderBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
 getOrderBy cmp xs =
-    let is = (fst . unzip . sortBy (cmp `on` snd) . zip [0..]) xs
+    let is = (fst . unzip . List.sortBy (cmp `on` snd) . zip [0..]) xs
         n  = length xs
     in newListPermute n is
 {-# INLINE getOrderBy #-}
