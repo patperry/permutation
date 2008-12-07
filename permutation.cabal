@@ -1,7 +1,7 @@
 name:            permutation
 version:         0.2
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
-synopsis:        Permutations and combinations
+synopsis:        Permutations
 description:
     A library for representing and applying permutations.
     .
@@ -36,6 +36,6 @@ library
 
     build-depends:   base, ghc-prim, QuickCheck < 2
     extensions:      MultiParamTypeClasses, FunctionalDependencies, 
-                     FlexibleContexts, Rank2Types
+                     FlexibleContexts, Rank2Types, MagicHash, UnboxedTuples
 
     ghc-options:     -Wall
