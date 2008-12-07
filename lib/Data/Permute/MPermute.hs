@@ -20,7 +20,7 @@ module Data.Permute.MPermute (
     newPermute,
     newPermute_,
     newListPermute,
-    newInvSwapsPermute,
+    newSwapsPermute,
     newCopyPermute,
     copyPermute,
     setIdentity,
@@ -62,7 +62,7 @@ module Data.Permute.MPermute (
     
     -- * Unsafe operations
     unsafeNewListPermute,
-    unsafeNewInvSwapsPermute,
+    unsafeNewSwapsPermute,
     unsafeGetElem,
     unsafeSetElem,
     unsafeSwapElems,
@@ -132,28 +132,28 @@ unsafeNewListPermute n is = do
 {-# INLINE unsafeNewListPermute #-}
 
 -- | Construct a permutation from a list of swaps.
--- @newInvSwapsPermute n ss@ creates a permuation of size @n@ given by the
--- /inverse/ of a sequence of swaps.
+-- @newSwapsPermute n ss@ creates a permuation of size @n@ given a
+-- sequence of swaps.
 -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
 -- @i0 \<-> j0@, then 
 -- @i1 \<-> j1@, and so on until
 -- @ik \<-> jk@.
-newInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-newInvSwapsPermute = newInvSwapsPermuteHelp swapElems
-{-# INLINE newInvSwapsPermute #-}
+newSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
+newSwapsPermute = newSwapsPermuteHelp swapElems
+{-# INLINE newSwapsPermute #-}
 
-unsafeNewInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-unsafeNewInvSwapsPermute = newInvSwapsPermuteHelp unsafeSwapElems
-{-# INLINE unsafeNewInvSwapsPermute #-}
+unsafeNewSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
+unsafeNewSwapsPermute = newSwapsPermuteHelp unsafeSwapElems
+{-# INLINE unsafeNewSwapsPermute #-}
 
-newInvSwapsPermuteHelp :: (MPermute p m) => (p -> Int -> Int -> m ())
+newSwapsPermuteHelp :: (MPermute p m) => (p -> Int -> Int -> m ())
                        -> Int -> [(Int,Int)] -> m p
-newInvSwapsPermuteHelp swap n ss = do
+newSwapsPermuteHelp swap n ss = do
     p <- newPermute n
     mapM_ (uncurry $ swap p) ss
     return $! p
-{-# INLINE newInvSwapsPermuteHelp #-}
+{-# INLINE newSwapsPermuteHelp #-}
 
 -- | Construct a new permutation by copying another.
 newCopyPermute :: (MPermute p m) => p -> m p

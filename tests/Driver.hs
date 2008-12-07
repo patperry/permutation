@@ -11,7 +11,7 @@ module Driver (
     Natural(..),
     Index(..),
     ListPermute(..),
-    InvSwapsPermute(..),
+    SwapsPermute(..),
     Swap(..),
     
     mytest,
@@ -69,14 +69,14 @@ instance Arbitrary ListPermute where
 
     coarbitrary = undefined
 
-data InvSwapsPermute = InvSwapsPermute Int [(Int,Int)] deriving (Eq,Show)
-instance Arbitrary InvSwapsPermute where
+data SwapsPermute = SwapsPermute Int [(Int,Int)] deriving (Eq,Show)
+instance Arbitrary SwapsPermute where
     arbitrary = do
         (Nat n) <- arbitrary
         let n' = n + 1
         (Nat k) <- arbitrary
         ss <- replicateM k (swap n')
-        return $ InvSwapsPermute n' ss
+        return $ SwapsPermute n' ss
 
     coarbitrary = undefined
 

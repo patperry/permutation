@@ -26,11 +26,11 @@ newListPermute_S n is = listPermute n is
 prop_NewListPermute (ListPermute n is) =
     newListPermute n is `equivalent` newListPermute_S n is
 
-newInvSwapsPermute_S n ss = invSwapsPermute n ss
-prop_NewInvSwapsPermute (InvSwapsPermute n ss) =
-    newInvSwapsPermute n ss `equivalent` newInvSwapsPermute_S n ss
-prop_UnsafeNewInvSwapsPermute (InvSwapsPermute n ss) =
-    unsafeNewInvSwapsPermute n ss `equivalent` newInvSwapsPermute_S n ss
+newSwapsPermute_S n ss = swapsPermute n ss
+prop_NewSwapsPermute (SwapsPermute n ss) =
+    newSwapsPermute n ss `equivalent` newSwapsPermute_S n ss
+prop_UnsafeNewSwapsPermute (SwapsPermute n ss) =
+    unsafeNewSwapsPermute n ss `equivalent` newSwapsPermute_S n ss
 
 
 
@@ -91,8 +91,8 @@ prop_GetElems = getElems `implements` getElems_S
 tests_STPermute = 
     [ ("newPermute"               , mytest prop_NewPermute)
     , ("newListPermute"           , mytest prop_NewListPermute)
-    , ("newInvSwapsPermute"       , mytest prop_NewInvSwapsPermute)
-    , ("unsafeNewInvSwapsPermute" , mytest prop_UnsafeNewInvSwapsPermute)
+    , ("newSwapsPermute"          , mytest prop_NewSwapsPermute)
+    , ("unsafeNewSwapsPermute"    , mytest prop_UnsafeNewSwapsPermute)
     , ("newCopyPermute"           , mytest prop_NewCopyPermute)
     , ("copyPermute"              , mytest prop_CopyPermute)
     , ("setIdentity"              , mytest prop_SetIdentity)

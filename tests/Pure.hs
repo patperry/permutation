@@ -28,10 +28,10 @@ prop_size_listPermute (ListPermute n is) =
 prop_elems_listPermute (ListPermute n is) =
     elems (listPermute n is) == is
 
-prop_size_invSwapsPermute (InvSwapsPermute n ss) =
-    size (invSwapsPermute n ss) == n
-prop_elems_invSwapsPermute (InvSwapsPermute n ss) =
-    elems (invSwapsPermute n ss) == map at [0..(n-1)]
+prop_size_swapsPermute (SwapsPermute n ss) =
+    size (swapsPermute n ss) == n
+prop_elems_swapsPermute (SwapsPermute n ss) =
+    elems (swapsPermute n ss) == map at [0..(n-1)]
   where
     at i = foldl' doSwap i $ reverse ss
     doSwap k (i,j) | k == i    = j
@@ -116,14 +116,17 @@ prop_rank (xs :: [Int]) =
 prop_rankBy cmp (xs :: [Int]) =
     applySwaps (invSwaps $ rankBy cmp xs) xs == (List.sortBy cmp xs)
 
+prop_swapsPermute_swaps (p :: Permute) =
+    swapsPermute (size p) (swaps p) == p
+
 
 tests_Permute = 
     [ ("size . permute"          , mytest prop_size_permute)
     , ("elems . permute"         , mytest prop_elems_permute)
     , ("size . listPermute"      , mytest prop_size_listPermute)
     , ("elems . listPermute"     , mytest prop_elems_listPermute)
-    , ("size . invSwapsPermute"  , mytest prop_size_invSwapsPermute)
-    , ("elems . invSwapsPermute" , mytest prop_elems_invSwapsPermute)
+    , ("size . swapsPermute"     , mytest prop_size_swapsPermute)
+    , ("elems . swapsPermute"    , mytest prop_elems_swapsPermute)
     , ("apply"                   , mytest prop_apply)
     , ("unsafeApply"             , mytest prop_unsafeApply)
     , ("size . inverse"          , mytest prop_size_inverse)
@@ -144,6 +147,7 @@ tests_Permute =
     , ("orderBy"                 , mytest prop_orderBy)
     , ("rank"                    , mytest prop_rank)
     , ("rankBy"                  , mytest prop_rankBy)
+    , ("swapsPermute . swaps"    , mytest prop_swapsPermute_swaps)
     ]
 
 

@@ -16,7 +16,7 @@ module Data.Permute (
     -- * Creating permutations
     permute,
     listPermute,
-    invSwapsPermute,
+    swapsPermute,
 
     -- * Accessing permutation elements
     apply,
@@ -65,16 +65,16 @@ listPermute n is = runST $
     unsafeFreeze =<< newListPermute n is
 
 -- | Construct a permutation from a list of swaps.
--- @invSwapsPermute n ss@ creats a permuation of size @n@ given by the
--- /inverse/ of a sequence of swaps.
+-- @swapsPermute n ss@ creats a permuation of size @n@ given by a
+-- sequence of swaps.
 -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
 -- @i0 \<-> j0@, then 
 -- @i1 \<-> j1@, and so on until
 -- @ik \<-> jk@.
-invSwapsPermute :: Int -> [(Int,Int)] -> Permute
-invSwapsPermute n ss = runST $
-    unsafeFreeze =<< newInvSwapsPermute n ss
+swapsPermute :: Int -> [(Int,Int)] -> Permute
+swapsPermute n ss = runST $
+    unsafeFreeze =<< newSwapsPermute n ss
 
 -- | @apply p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
