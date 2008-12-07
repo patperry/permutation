@@ -23,26 +23,15 @@ module Driver (
 
     ) where
 
-import Control.Arrow
 import Control.Monad
-import Control.Monad.ST
-
-import Data.AEq
-import Data.Complex
-import Data.Ix
-import Data.Function
 import Data.List
 import Data.Ord
-
-import Debug.Trace
-
 import System.IO
 import System.Random
-
 import Test.QuickCheck
-
 import Text.Printf
 import Text.Show.Functions
+
 
 newtype Natural = Nat Int deriving (Eq,Show)
 instance Arbitrary Natural where
