@@ -66,7 +66,7 @@ data STIntArray s = STIntArray !Int (MutableByteArray# s)
 newArray_ :: Int -> ST s (STIntArray s)
 newArray_ n@(I# n#) =
     ST $ \s1# ->
-        case newPinnedByteArray# (n# *# sizeOfInt) s1# of { (# s2#, marr# #) ->
+        case newByteArray# (n# *# sizeOfInt) s1# of { (# s2#, marr# #) ->
         (# s2#, STIntArray n marr# #) }
   where
     sizeOfInt = case sizeOf (0 :: Int) of (I# s#) -> s#
