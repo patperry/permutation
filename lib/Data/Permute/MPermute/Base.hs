@@ -14,9 +14,11 @@
 module Data.Permute.MPermute.Base
     where
 
+import Control.Monad
 import Control.Monad.ST
 import Data.Function( on )
 import Data.List( sortBy )
+import System.IO.Unsafe( unsafeInterleaveIO )
 
 import Data.Permute.Base
 import Data.Permute.IOBase
@@ -28,112 +30,301 @@ import Data.Permute.IOBase
 -- over the type of the monad, @m@, in which the mutable permutation will be
 -- manipulated.
 class (Monad m) => MPermute p m | p -> m, m -> p where
+    -- | Get the size of a permutation.
+    getSize :: p -> m Int
+
     -- | Create a new permutation initialized to be the identity.
-    newPermute :: (MPermute p m) => Int -> m p
+    newPermute :: Int -> m p
 
     -- | Allocate a new permutation but do not initialize it.
-    newPermute_ :: (MPermute p m) => Int -> m p
-        
-    -- | Construct a permutation from a list of elements.  
-    -- @newListPermute n is@ creates a permuation of size @n@ with
-    -- the @i@th element equal to @is !! i@.  For the permutation to be valid,
-    -- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
-    -- exactly once each.
-    newListPermute :: (MPermute p m) => Int -> [Int] -> m p
-    unsafeNewListPermute :: (MPermute p m) => Int -> [Int] -> m p
+    newPermute_ :: Int -> m p
 
-    -- | Construct a permutation from a list of swaps.
-    -- @newInvSwapsPermute n ss@ creates a permuation of size @n@ given by the
-    -- /inverse/ of a sequence of swaps.
-    -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
-    -- sequence of swaps is
-    -- @i0 \<-> j0@, then 
-    -- @i1 \<-> j1@, and so on until
-    -- @ik \<-> jk@.
-    newInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-    unsafeNewInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
-
-    -- | Construct a new permutation by copying another.
-    newCopyPermute :: (MPermute p m) => p -> m p
-
-    -- | @copyPermute dst src@ copies the elements of the permutation @src@
-    -- into the permtuation @dst@.  The two permutations must have the same
-    -- size.
-    copyPermute :: (MPermute p m) => p -> p -> m ()
-
-    -- | Set a permutation to the identity.
-    setIdentity :: (MPermute p m) => p -> m ()
-
-    -- | @getElem p i@ gets the value of the @i@th element of the permutation
-    -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
-    -- size of the permutation.
-    getElem :: (MPermute p m) => p -> Int -> m Int
-    unsafeGetElem :: (MPermute p m) => p -> Int -> m Int
-
-    -- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
-    -- permutation @p@.
-    swapElems :: (MPermute p m) => p -> Int -> Int -> m ()
-    unsafeSwapElems :: (MPermute p m) => p -> Int -> Int -> m ()
-
-    -- | Get the size of a permutation.
-    getSize :: (MPermute p m) => p -> m Int
+    unsafeGetElem :: p -> Int -> m Int
+    unsafeSetElem :: p -> Int -> Int -> m ()
+    unsafeSwapElems :: p -> Int -> Int -> m ()    
 
     -- | Get a lazy list of the permutation elements.  The laziness makes this
     -- function slightly dangerous if you are modifying the permutation.
-    getElems :: (MPermute p m) => p -> m [Int]
+    getElems :: p -> m [Int]
 
-    -- | Returns whether or not the permutation is valid.  For it to be valid,
-    -- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
-    -- values @p[0],...,p[n-1]@.
-    isValid :: (MPermute p m) => p -> m Bool
+    setElems :: p -> [Int] -> m ()
 
-    -- | Compute the inverse of a permutation.  
-    getInverse :: (MPermute p m) => p -> m p
+    unsafeFreeze :: p -> m Permute
+    unsafeThaw :: Permute -> m p
+    
+    unsafeInterleaveM :: m a -> m a
+    
 
-    -- | Set one permutation to be the inverse of another.  
-    -- @copyInverse inv p@ computes the inverse of @p@ and stores it in @inv@.
-    -- The two permutations must have the same size.
-    copyInverse :: (MPermute p m) => p -> p -> m ()
         
-    -- | Advance a permutation to the next permutation in lexicogrphic order and
-    -- return @True@.  If no further permutaitons are available, return @False@ and
-    -- leave the permutation unmodified.  Starting with the idendity permutation 
-    -- and repeatedly calling @setNext@ will iterate through all permutations of a 
-    -- given size.
-    setNext :: (MPermute p m) => p -> m Bool
+-- | Construct a permutation from a list of elements.  
+-- @newListPermute n is@ creates a permuation of size @n@ with
+-- the @i@th element equal to @is !! i@.  For the permutation to be valid,
+-- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
+-- exactly once each.
+newListPermute :: (MPermute p m) => Int -> [Int] -> m p
+newListPermute n is = do
+    p <- unsafeNewListPermute n is
+    valid <- isValid p
+    when (not valid) $ fail "invalid permutation"
+    return $! p
+{-# INLINE newListPermute #-}
 
-    -- | Step backwards to the previous permutation in lexicographic order and
-    -- return @True@.  If there is no previous permutation, return @False@ and
-    -- leave the permutation unmodified.
-    setPrev :: (MPermute p m) => p -> m Bool
+unsafeNewListPermute :: (MPermute p m) => Int -> [Int] -> m p
+unsafeNewListPermute n is = do
+    p <- newPermute_ n
+    setElems p is
+    return $! p
+{-# INLINE unsafeNewListPermute #-}
 
-    -- | Get a lazy list of swaps equivalent to the permutation.  A result of
-    -- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 \<-> j0@, 
-    -- then @i1 \<-> j1@, and so on until @ik \<-> jk@.  The laziness makes this
-    -- function slightly dangerous if you are modifying the permutation.
-    getSwaps :: (MPermute p m) => p -> m [(Int,Int)]
+-- | Construct a permutation from a list of swaps.
+-- @newInvSwapsPermute n ss@ creates a permuation of size @n@ given by the
+-- /inverse/ of a sequence of swaps.
+-- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
+-- sequence of swaps is
+-- @i0 \<-> j0@, then 
+-- @i1 \<-> j1@, and so on until
+-- @ik \<-> jk@.
+newInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
+newInvSwapsPermute = newInvSwapsPermuteHelp swapElems
+{-# INLINE newInvSwapsPermute #-}
 
-    -- | Get a lazy list of swaps equivalent to the inverse of a permutation.
-    getInvSwaps :: (MPermute p m) => p -> m [(Int,Int)]
+unsafeNewInvSwapsPermute :: (MPermute p m) => Int -> [(Int,Int)] -> m p
+unsafeNewInvSwapsPermute = newInvSwapsPermuteHelp unsafeSwapElems
+{-# INLINE unsafeNewInvSwapsPermute #-}
 
-    -- | Convert a mutable permutation to an immutable one.
-    freeze :: (MPermute p m) => p -> m Permute
-    unsafeFreeze :: (MPermute p m) => p -> m Permute
+newInvSwapsPermuteHelp :: (MPermute p m) => (p -> Int -> Int -> m ())
+                       -> Int -> [(Int,Int)] -> m p
+newInvSwapsPermuteHelp swap n ss = do
+    p <- newPermute n
+    mapM_ (uncurry $ swap p) ss
+    return $! p
+{-# INLINE newInvSwapsPermuteHelp #-}
 
-    -- | Convert an immutable permutation to a mutable one.
-    thaw :: (MPermute p m) => Permute -> m p
-    unsafeThaw :: (MPermute p m) => Permute -> m p
+-- | Construct a new permutation by copying another.
+newCopyPermute :: (MPermute p m) => p -> m p
+newCopyPermute p = do
+    n  <- getSize p
+    p' <- newPermute_ n
+    copyPermute p' p
+    return $! p'
+{-# INLINE newCopyPermute #-}
+
+-- | @copyPermute dst src@ copies the elements of the permutation @src@
+-- into the permtuation @dst@.  The two permutations must have the same
+-- size.
+copyPermute :: (MPermute p m) => p -> p -> m ()
+copyPermute dst src =
+    getElems src >>= setElems dst
+{-# INLINE copyPermute #-}
+
+-- | Set a permutation to the identity.
+setIdentity :: (MPermute p m) => p -> m ()
+setIdentity p = do
+    n <- getSize p
+    setElems p [0 .. n-1]
+{-# INLINE setIdentity #-}
+
+-- | @getElem p i@ gets the value of the @i@th element of the permutation
+-- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
+-- size of the permutation.
+getElem :: (MPermute p m) => p -> Int -> m Int
+getElem p i = do
+    n <- getSize p
+    when (i < 0 || i >= n) $ fail "getElem: invalid index"
+    unsafeGetElem p i
+{-# INLINE getElem #-}
+
+-- | @swapElems p i j@ exchanges the @i@th and @j@th elements of the 
+-- permutation @p@.
+swapElems :: (MPermute p m) => p -> Int -> Int -> m ()
+swapElems p i j = do
+    n <- getSize p
+    when (i < 0 || i >= n || j < 0 || j >= n) $ fail "swapElems: invalid index"
+    unsafeSwapElems p i j
+{-# INLINE swapElems #-}
+
+-- | Returns whether or not the permutation is valid.  For it to be valid,
+-- the numbers @0,...,(n-1)@ must all appear exactly once in the stored
+-- values @p[0],...,p[n-1]@.
+isValid :: (MPermute p m) => p -> m Bool
+isValid p = do
+    n <- getSize p
+    liftM and $ validIndices n
+  where
+    j `existsIn` i = do
+        seen <- liftM (take i) $ getElems p
+        return $ (any (==j)) seen
+        
+    isValidIndex n i = do
+        i' <- unsafeGetElem p i
+        valid  <- return $ i' >= 0 && i' < n
+        unique <- liftM not (i' `existsIn` i)
+        return $ valid && unique
+
+    validIndices n = validIndicesHelp n 0
+
+    validIndicesHelp n i
+        | i == n = return []
+        | otherwise = do
+            a  <- isValidIndex n i
+            as <- unsafeInterleaveM $ validIndicesHelp n (i+1)
+            return (a:as)
+{-# INLINE isValid #-}
+
+-- | Compute the inverse of a permutation.  
+getInverse :: (MPermute p m) => p -> m p
+getInverse p = do
+    n <- getSize p
+    q <- newPermute_ n
+    copyInverse q p
+    return $! q
+{-# INLINE getInverse #-}
+
+-- | Set one permutation to be the inverse of another.  
+-- @copyInverse inv p@ computes the inverse of @p@ and stores it in @inv@.
+-- The two permutations must have the same size.
+copyInverse :: (MPermute p m) => p -> p -> m ()
+copyInverse dst src = do
+    n  <- getSize src
+    n' <- getSize dst
+    when (n /= n') $ fail "permutation size mismatch"
+    forM_ [0 .. n-1] $ \i -> do
+        i' <- unsafeGetElem src i
+        unsafeSetElem dst i' i
+{-# INLINE copyInverse #-}
+    
+-- | Advance a permutation to the next permutation in lexicogrphic order and
+-- return @True@.  If no further permutaitons are available, return @False@ and
+-- leave the permutation unmodified.  Starting with the idendity permutation 
+-- and repeatedly calling @setNext@ will iterate through all permutations of a 
+-- given size.
+setNext :: (MPermute p m) => p -> m Bool
+setNext = setNextBy compare
+{-# INLINE setNext #-}
+
+-- | Step backwards to the previous permutation in lexicographic order and
+-- return @True@.  If there is no previous permutation, return @False@ and
+-- leave the permutation unmodified.
+setPrev :: (MPermute p m) => p -> m Bool
+setPrev = setNextBy (flip compare)
+{-# INLINE setPrev #-}
+
+setNextBy :: (MPermute p m) => (Int -> Int -> Ordering) -> p -> m Bool
+setNextBy cmp p = do
+    n <- getSize p
+    if n > 1
+        then do
+            findLastAscent (n-2) >>=
+                maybe (return False) (\i -> do
+                    i'     <- unsafeGetElem p i
+                    i1'    <- unsafeGetElem p (i+1)
+                    (k,k') <- findSmallestLargerThan n i' (i+2) (i+1) i1'
+                    
+                    -- swap i and k
+                    unsafeSetElem p i k'
+                    unsafeSetElem p k i'
+                    
+                    reverseElems (i+1) (n-1)
+                    
+                    return True
+                )
+        else 
+            return False
+        
+  where
+    i `lt` j = cmp i j == LT
+    i `gt` j = cmp i j == GT
+    
+    findLastAscent i = do
+        ascent <- isAscent i
+        if ascent then return (Just i) else recurse
+      where
+        recurse = if i /= 0 then findLastAscent (i-1) else return Nothing 
+    
+    findSmallestLargerThan n i' j k k'
+        | j < n = do
+            j' <- unsafeGetElem p j
+            if j' `gt` i' && j' `lt` k'
+                then findSmallestLargerThan n i' (j+1) j j'
+                else findSmallestLargerThan n i' (j+1) k k'
+        | otherwise =
+            return (k,k')
+            
+    isAscent i = liftM2 lt (unsafeGetElem p i) (unsafeGetElem p (i+1))
+    
+    reverseElems i j
+        | i >= j = return ()
+        | otherwise = do
+            unsafeSwapElems p i j
+            reverseElems (i+1) (j-1)
+{-# INLINE setNextBy #-}  
+
+
+-- | Get a lazy list of swaps equivalent to the permutation.  A result of
+-- @[ (i0,j0), (i1,j1), ..., (ik,jk) ]@ means swap @i0 \<-> j0@, 
+-- then @i1 \<-> j1@, and so on until @ik \<-> jk@.  The laziness makes this
+-- function slightly dangerous if you are modifying the permutation.
+getSwaps :: (MPermute p m) => p -> m [(Int,Int)]
+getSwaps = getSwapsHelp False
+{-# INLINE getSwaps #-}
+
+-- | Get a lazy list of swaps equivalent to the inverse of a permutation.
+getInvSwaps :: (MPermute p m) => p -> m [(Int,Int)]
+getInvSwaps = getSwapsHelp True
+{-# INLINE getInvSwaps #-}
+
+getSwapsHelp :: (MPermute p m) => Bool -> p -> m [(Int,Int)]
+getSwapsHelp inv p = do
+    n <- getSize p
+    liftM concat $
+        forM [0..(n-1)] $ \i -> do
+            k <- unsafeGetElem p i
+            least <- isLeast i k
+            if least 
+                then do
+                    i' <- unsafeGetElem p i
+                    unsafeInterleaveM $ doCycle i i i'
+                else
+                    return []
+  where
+    isLeast i k 
+        | k > i = do
+            k' <- unsafeGetElem p k
+            isLeast i k'
+        | k < i     = return False
+        | otherwise = return True
+        
+    doCycle start i i'
+        | i' == start = return []
+        | otherwise = do
+            i'' <- unsafeGetElem p i'
+            let s = if inv then (start,i') else (i,i')
+            ss <- unsafeInterleaveM $ doCycle start i' i''
+            return (s:ss)
+{-# INLINE getSwapsHelp #-}
+
+-- | Convert a mutable permutation to an immutable one.
+freeze :: (MPermute p m) => p -> m Permute
+freeze p = unsafeFreeze =<< newCopyPermute p
+{-# INLINE freeze #-}
+
+-- | Convert an immutable permutation to a mutable one.
+thaw :: (MPermute p m) => Permute -> m p
+thaw p = newCopyPermute =<< unsafeThaw p
+{-# INLINE thaw #-}
 
 -- | Returns a permutation which rearranges its first argument into ascending 
 -- order.  This is a special case of 'getOrderBy'.
 getOrder :: (Ord a, MPermute p m) => [a] -> m p
 getOrder = getOrderBy compare
+{-# INLINE getOrder #-}
 
 getOrderBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
 getOrderBy cmp xs =
     let is = (fst . unzip . sortBy (cmp `on` snd) . zip [0..]) xs
         n  = length xs
     in newListPermute n is
+{-# INLINE getOrderBy #-}
 
 -- | Returns a permutation, the inverse of which rearranges its first argument 
 -- into ascending order. The returned permutation, @p@, has the property that
@@ -141,120 +332,63 @@ getOrderBy cmp xs =
 -- special case of 'getRankBy'.
 getRank :: (Ord a, MPermute p m) => [a] -> m p
 getRank = getRankBy compare
+{-# INLINE getRank #-}
 
 getRankBy :: (MPermute p m) => (a -> a -> Ordering) -> [a] -> m p
 getRankBy cmp xs = do
     p <- getOrderBy cmp xs
     getInverse p
+{-# INLINE getRankBy #-}
 
 
 --------------------------------- Instances ---------------------------------
 
 instance MPermute (STPermute s) (ST s) where
+    getSize = getSizeSTPermute
+    {-# INLINE getSize #-}
     newPermute = newSTPermute
     {-# INLINE newPermute #-}
     newPermute_ = newSTPermute_
     {-# INLINE newPermute_ #-}
-    newListPermute = newListSTPermute
-    {-# INLINE newListPermute #-}
-    unsafeNewListPermute = unsafeNewListSTPermute
-    {-# INLINE unsafeNewListPermute #-}
-    newInvSwapsPermute = newInvSwapsSTPermute
-    {-# INLINE newInvSwapsPermute #-}
-    unsafeNewInvSwapsPermute = unsafeNewInvSwapsSTPermute
-    {-# INLINE unsafeNewInvSwapsPermute #-}
-    newCopyPermute = newCopySTPermute
-    {-# INLINE newCopyPermute #-}
-    copyPermute = copySTPermute
-    {-# INLINE copyPermute #-}
-    setIdentity = setIdentitySTPermute
-    {-# INLINE setIdentity #-}
-    getElem = getElemSTPermute
-    {-# INLINE getElem #-}
     unsafeGetElem = unsafeGetElemSTPermute
     {-# INLINE unsafeGetElem #-}
-    swapElems = swapElemsSTPermute
-    {-# INLINE swapElems #-}
+    unsafeSetElem = unsafeSetElemSTPermute
+    {-# INLINE unsafeSetElem #-}
     unsafeSwapElems = unsafeSwapElemsSTPermute
     {-# INLINE unsafeSwapElems #-}
-    getSize = getSizeSTPermute
-    {-# INLINE getSize #-}
     getElems = getElemsSTPermute
     {-# INLINE getElems #-}
-    isValid = isValidSTPermute
-    {-# INLINE isValid #-}
-    getInverse = getInverseSTPermute
-    {-# INLINE getInverse #-}
-    copyInverse = copyInverseSTPermute
-    {-# INLINE copyInverse #-}
-    setNext = setNextSTPermute
-    {-# INLINE setNext #-}
-    setPrev = setPrevSTPermute
-    {-# INLINE setPrev #-}
-    getSwaps = getSwapsSTPermute
-    {-# INLINE getSwaps #-}
-    getInvSwaps = getInvSwapsSTPermute
-    {-# INLINE getInvSwaps #-}
-    freeze = freezeSTPermute
-    {-# INLINE freeze #-}
+    setElems = setElemsSTPermute
+    {-# INLINE setElems #-}
     unsafeFreeze = unsafeFreezeSTPermute
     {-# INLINE unsafeFreeze #-}
-    thaw = thawSTPermute
-    {-# INLINE thaw #-}
     unsafeThaw = unsafeThawSTPermute
     {-# INLINE unsafeThaw #-}
+    unsafeInterleaveM = unsafeInterleaveST
+    {-# INLINE unsafeInterleaveM #-}
 
 
 instance MPermute IOPermute IO where
+    getSize = getSizeIOPermute
+    {-# INLINE getSize #-}
     newPermute = newIOPermute
     {-# INLINE newPermute #-}
     newPermute_ = newIOPermute_
     {-# INLINE newPermute_ #-}
-    newListPermute = newListIOPermute
-    {-# INLINE newListPermute #-}
-    unsafeNewListPermute = unsafeNewListIOPermute
-    {-# INLINE unsafeNewListPermute #-}
-    newInvSwapsPermute = newInvSwapsIOPermute
-    {-# INLINE newInvSwapsPermute #-}
-    unsafeNewInvSwapsPermute = unsafeNewInvSwapsIOPermute
-    {-# INLINE unsafeNewInvSwapsPermute #-}
-    newCopyPermute = newCopyIOPermute
-    {-# INLINE newCopyPermute #-}
-    copyPermute = copyIOPermute
-    {-# INLINE copyPermute #-}
-    setIdentity = setIdentityIOPermute
-    {-# INLINE setIdentity #-}
-    getElem = getElemIOPermute
-    {-# INLINE getElem #-}
     unsafeGetElem = unsafeGetElemIOPermute
     {-# INLINE unsafeGetElem #-}
-    swapElems = swapElemsIOPermute
-    {-# INLINE swapElems #-}
+    unsafeSetElem = unsafeSetElemIOPermute
+    {-# INLINE unsafeSetElem #-}
     unsafeSwapElems = unsafeSwapElemsIOPermute
     {-# INLINE unsafeSwapElems #-}
-    getSize = getSizeIOPermute
-    {-# INLINE getSize #-}
     getElems = getElemsIOPermute
     {-# INLINE getElems #-}
-    isValid = isValidIOPermute
-    {-# INLINE isValid #-}
-    getInverse = getInverseIOPermute
-    {-# INLINE getInverse #-}
-    copyInverse = copyInverseIOPermute
-    {-# INLINE copyInverse #-}
-    setNext = setNextIOPermute
-    {-# INLINE setNext #-}
-    setPrev = setPrevIOPermute
-    {-# INLINE setPrev #-}
-    getSwaps = getSwapsIOPermute
-    {-# INLINE getSwaps #-}
-    getInvSwaps = getInvSwapsIOPermute
-    {-# INLINE getInvSwaps #-}
-    freeze = freezeIOPermute
-    {-# INLINE freeze #-}
+    setElems = setElemsIOPermute
+    {-# INLINE setElems #-}
     unsafeFreeze = unsafeFreezeIOPermute
     {-# INLINE unsafeFreeze #-}
-    thaw = thawIOPermute
-    {-# INLINE thaw #-}
     unsafeThaw = unsafeThawIOPermute
     {-# INLINE unsafeThaw #-}
+    unsafeInterleaveM = unsafeInterleaveIO
+    {-# INLINE unsafeInterleaveM #-}
+
