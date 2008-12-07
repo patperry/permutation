@@ -94,6 +94,16 @@ prop_prev_next (p :: Permute) =
   where
     n = size p
 
+prop_fst_sort (xs :: [Int]) =
+    (fst . sort) xs == (List.sort xs)
+prop_snd_sort (xs :: [Int]) =
+    applySwaps (swaps $ snd $ sort xs) xs == (List.sort xs)
+
+prop_fst_sortBy cmp (xs :: [Int]) =
+    (fst . sortBy cmp) xs == (List.sortBy cmp xs)
+prop_snd_sortBy cmp (xs :: [Int]) =
+    applySwaps (swaps $ snd $ sortBy cmp xs) xs == (List.sortBy cmp xs)
+
 prop_order (xs :: [Int]) =
     applySwaps (swaps $ order xs) xs == (List.sort xs)
 
@@ -126,6 +136,10 @@ tests_Permute =
     , ("next (last permutation)" , mytest prop_next_last)
     , ("next . prev"             , mytest prop_next_prev)
     , ("prev . next"             , mytest prop_prev_next)
+    , ("fst . sort"              , mytest prop_fst_sort)
+    , ("snd . sort"              , mytest prop_snd_sort)
+    , ("fst . sortBy"            , mytest prop_fst_sortBy)
+    , ("snd . sortBy"            , mytest prop_snd_sortBy)
     , ("order"                   , mytest prop_order)
     , ("orderBy"                 , mytest prop_orderBy)
     , ("rank"                    , mytest prop_rank)
