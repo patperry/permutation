@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternSignatures, ScopedTypeVariables, BangPatterns #-}
+{-# OPTIONS_GHC -fglasgow-exts #-}
 module Pure (
     tests_Permute
     ) where
