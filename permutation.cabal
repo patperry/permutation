@@ -34,8 +34,11 @@ library
                      
     other-modules:   Data.IntArray
 
-    build-depends:   base, ghc-prim, QuickCheck < 2
+    build-depends:   base, QuickCheck < 2
     extensions:      MultiParamTypeClasses, FunctionalDependencies, 
                      FlexibleContexts, Rank2Types, MagicHash, UnboxedTuples
 
     ghc-options:     -Wall
+
+    if impl(ghc >= 6.9)
+      build-depends: ghc-prim
