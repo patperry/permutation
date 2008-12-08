@@ -74,7 +74,9 @@ newSTPermute n = do
 {-# INLINE newSTPermute #-}
 
 newSTPermute_ :: Int -> ST s (STPermute s)
-newSTPermute_ n = liftM STPermute $ ArrST.newArray_ n
+newSTPermute_ n = do
+    when (n < 0) $ fail "invalid size"
+    liftM STPermute $ ArrST.newArray_ n
 {-# INLINE newSTPermute_ #-}
 
 unsafeGetElemSTPermute :: STPermute s -> Int -> ST s Int
