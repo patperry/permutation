@@ -16,6 +16,7 @@ build-type:      Custom
 tested-with:     GHC ==6.10.1
 
 extra-source-files:  examples/Enumerate.hs
+                     tests/Test/Permute.hs
                      tests/Driver.hs
                      tests/Main.hs
                      tests/Pure.hs
@@ -30,11 +31,10 @@ library
                      Data.Permute.MPermute
                      Data.Permute.IO
                      Data.Permute.ST
-                     Test.Permute
                      
     other-modules:   Data.IntArray
 
-    build-depends:   base, QuickCheck < 2
+    build-depends:   base
     extensions:      MultiParamTypeClasses, FunctionalDependencies, 
                      FlexibleContexts, Rank2Types, MagicHash, UnboxedTuples
 
