@@ -1,12 +1,12 @@
 name:            permutation
-version:         0.2
+version:         0.2.1
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        A library for representing and applying permutations.
 description:
     This library includes data types for storing permutations.  It
-    implements pure and impure types, the latter which can be modified
+    implements pure and impure types, the latter of which can be modified
     in-place.  The main utility of the library is converting between
-    the linear representation of a permutation to a sequence of swaps.
+    the linear representation of a permutation and a sequence of swaps.
     This allows, for instance, applying a permutation or its inverse
     to an array with O(1) memory use.
     .
