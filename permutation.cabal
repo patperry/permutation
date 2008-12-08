@@ -13,7 +13,7 @@ description:
     Much of the interface for the library is based on the permutation 
     functions in the GNU Scientific Library (GSL).
     .
-category:        Math
+category:        Data Structures, Math
 license:         BSD3
 license-file:    LICENSE
 copyright:       (c) 2008. Patrick Perry <patperry@stanford.edu>
