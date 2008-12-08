@@ -12,6 +12,16 @@ main = do
     args <- getArgs
     let n = if null args then 100 else read (head args)
     
+    (smokeResults, smokePassed) <- liftM unzip $
+        foldM ( \prev (name,subtests) -> do
+                    printf "\n%s\n" name
+                    printf "%s\n" $ replicate (length name) '-'
+                    cur <- mapM (\(s,a) -> printf "%-30s: " s >> a 1) subtests
+                    return (prev ++ cur)
+              )
+              []
+              smoke
+
     (results, passed) <- liftM unzip $
         foldM ( \prev (name,subtests) -> do
                      printf "\n%s\n" name
@@ -22,9 +32,12 @@ main = do
               []
               tests
                
-    printf "\nPassed %d tests!\n\n" (sum passed)
-    when (not . and $ results) $ fail "\nNot all tests passed!"
+    printf "\nPassed %d tests!\n\n" (sum $ smokePassed ++ passed)
+    when (not . and $ smokeResults ++ results) $ fail "\nNot all tests passed!"
  where
+
+    smoke = [ ("STPermute", smoke_STPermute) 
+            ]
 
     tests = [ ("Permute"   , tests_Permute)
             , ("STPermute" , tests_STPermute)

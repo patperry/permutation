@@ -1,6 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 module ST (
-    tests_STPermute
+    tests_STPermute,
+    smoke_STPermute
     ) where
     
 import Control.Monad
@@ -85,8 +86,26 @@ prop_GetSize = getSize `implements` getSize_S
 getElems_S p = (elems p, p)
 prop_GetElems = getElems `implements` getElems_S
 
+prop_IsValid_Strict = runST $ do
+    p <- newPermute 10
+    setElem p 0 1
+    valid <- isValid p
+    setElem p 0 0
+    return $ valid == False
 
+prop_GetSwaps_Lazy1 = runST $ do
+    p <- newPermute 10
+    ss <- getSwaps p
+    swapElems p 0 1
+    return $ length ss == 1
 
+prop_GetSwaps_Lazy2 = runST $ do
+    p <- newPermute 10
+    ss <- getSwaps p
+    swapElems p 0 1
+    swapElems p 3 4
+    head ss `seq` swapElems p 3 4
+    return $ length ss == 1
 
 tests_STPermute = 
     [ ("newPermute"               , mytest prop_NewPermute)
@@ -104,6 +123,11 @@ tests_STPermute =
     , ("getElems"                 , mytest prop_GetElems)
     ]
 
+smoke_STPermute =
+    [ ("isValid is strict"             , mytest prop_IsValid_Strict)
+    , ("getSwaps is lazy (test 1)"     , mytest prop_GetSwaps_Lazy1)
+    , ("getSwaps is lazy (test 2)"     , mytest prop_GetSwaps_Lazy2)
+    ]
 
 ------------------------------------------------------------------------
 -- 

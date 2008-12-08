@@ -214,7 +214,8 @@ swapElems p i j = do
 isValid :: (MPermute p m) => p -> m Bool
 isValid p = do
     n <- getSize p
-    liftM and $ validIndices n
+    valid <- liftM and $ validIndices n
+    return $! valid
   where
     j `existsIn` i = do
         seen <- liftM (take i) $ getElems p
@@ -224,15 +225,15 @@ isValid p = do
         i' <- unsafeGetElem p i
         valid  <- return $ i' >= 0 && i' < n
         unique <- liftM not (i' `existsIn` i)
-        return $ valid && unique
+        return $! valid && unique
 
     validIndices n = validIndicesHelp n 0
 
     validIndicesHelp n i
         | i == n = return []
-        | otherwise = do
+        | otherwise = unsafeInterleaveM $ do
             a  <- isValidIndex n i
-            as <- unsafeInterleaveM $ validIndicesHelp n (i+1)
+            as <- validIndicesHelp n (i+1)
             return (a:as)
 {-# INLINE isValid #-}
 
@@ -341,17 +342,18 @@ getInvSwaps = getSwapsHelp True
 getSwapsHelp :: (MPermute p m) => Bool -> p -> m [(Int,Int)]
 getSwapsHelp inv p = do
     n <- getSize p
-    liftM concat $
-        forM [0..(n-1)] $ \i -> do
-            k <- unsafeGetElem p i
-            least <- isLeast i k
-            if least 
-                then do
-                    i' <- unsafeGetElem p i
-                    unsafeInterleaveM $ doCycle i i i'
-                else
-                    return []
+    liftM concat $ go n 0
   where
+    go n i | i == n    = return []
+           | otherwise = unsafeInterleaveM $ do
+        i'    <- unsafeGetElem p i
+        least <- isLeast i i'
+        cycle <- if least 
+                     then doCycle i i i'
+                     else return []
+        rest  <- go n (i+1)
+        return (cycle:rest)
+      
     isLeast i k 
         | k > i = do
             k' <- unsafeGetElem p k
@@ -361,10 +363,10 @@ getSwapsHelp inv p = do
         
     doCycle start i i'
         | i' == start = return []
-        | otherwise = do
+        | otherwise = unsafeInterleaveM $ do
             i'' <- unsafeGetElem p i'
             let s = if inv then (start,i') else (i,i')
-            ss <- unsafeInterleaveM $ doCycle start i' i''
+            ss <- doCycle start i' i''
             return (s:ss)
 {-# INLINE getSwapsHelp #-}
 
