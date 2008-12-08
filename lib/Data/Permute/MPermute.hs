@@ -348,11 +348,11 @@ getSwapsHelp inv p = do
            | otherwise = unsafeInterleaveM $ do
         i'    <- unsafeGetElem p i
         least <- isLeast i i'
-        cycle <- if least 
+        c     <- if least 
                      then doCycle i i i'
                      else return []
-        rest  <- go n (i+1)
-        return (cycle:rest)
+        cs    <- go n (i+1)
+        return (c:cs)
       
     isLeast i k 
         | k > i = do
