@@ -33,8 +33,8 @@ module Data.IntArray (
     
     ) where
 
+import GHC.Base( Int(..) )
 import GHC.Prim
-import GHC.Types
 import GHC.ST
 import Foreign( sizeOf )
 

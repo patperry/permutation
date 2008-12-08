@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
+{-# LANGUAGE PatternSignatures, ScopedTypeVariables, BangPatterns #-}
 module Pure (
     tests_Permute
     ) where
