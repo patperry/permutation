@@ -121,14 +121,14 @@ newListPermute n is = do
     p <- unsafeNewListPermute n is
     valid <- isValid p
     when (not valid) $ fail "invalid permutation"
-    return $! p
+    return  p
 {-# INLINE newListPermute #-}
 
 unsafeNewListPermute :: (MPermute p m) => Int -> [Int] -> m p
 unsafeNewListPermute n is = do
     p <- newPermute_ n
     setElems p is
-    return $! p
+    return p
 {-# INLINE unsafeNewListPermute #-}
 
 -- | Construct a permutation from a list of swaps.
@@ -152,7 +152,7 @@ newSwapsPermuteHelp :: (MPermute p m) => (p -> Int -> Int -> m ())
 newSwapsPermuteHelp swap n ss = do
     p <- newPermute n
     mapM_ (uncurry $ swap p) ss
-    return $! p
+    return p
 {-# INLINE newSwapsPermuteHelp #-}
 
 -- | Construct a new permutation by copying another.
@@ -225,7 +225,7 @@ isValid p = do
         i' <- unsafeGetElem p i
         valid  <- return $ i' >= 0 && i' < n
         unique <- liftM not (i' `existsIn` i)
-        return $! valid && unique
+        return $ valid && unique
 
     validIndices n = validIndicesHelp n 0
 
