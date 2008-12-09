@@ -112,7 +112,7 @@ class (Monad m) => MPermute p m | p -> m, m -> p where
     
         
 -- | Construct a permutation from a list of elements.  
--- @newListPermute n is@ creates a permuation of size @n@ with
+-- @newListPermute n is@ creates a permutation of size @n@ with
 -- the @i@th element equal to @is !! i@.  For the permutation to be valid,
 -- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
 -- exactly once each.
@@ -132,7 +132,7 @@ unsafeNewListPermute n is = do
 {-# INLINE unsafeNewListPermute #-}
 
 -- | Construct a permutation from a list of swaps.
--- @newSwapsPermute n ss@ creates a permuation of size @n@ given a
+-- @newSwapsPermute n ss@ creates a permutation of size @n@ given a
 -- sequence of swaps.
 -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
