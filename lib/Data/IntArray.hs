@@ -18,6 +18,7 @@ module Data.IntArray (
     elems,
 
     newArray_,
+    sameSTIntArray,
     
     numElementsSTIntArray,
     getNumElements,
@@ -70,6 +71,11 @@ newArray_ n@(I# n#) =
         (# s2#, STIntArray n marr# #) }
   where
     sizeOfInt = case sizeOf (0 :: Int) of (I# s#) -> s#
+
+{-# INLINE sameSTIntArray #-}
+sameSTIntArray :: STIntArray s -> STIntArray s -> Bool
+sameSTIntArray (STIntArray _ marr1#) (STIntArray _ marr2#) =
+    sameMutableByteArray# marr1# marr2#
     
 {-# INLINE numElementsSTIntArray #-}
 numElementsSTIntArray :: STIntArray s -> Int

@@ -17,7 +17,7 @@ import Data.Permute.Base
 
 -- | A mutable permutation that can be manipulated in the 'IO' monad. The
 -- type argument @s@ is the state variable argument for the 'IO' type.
-newtype IOPermute = IOPermute (STPermute RealWorld)
+newtype IOPermute = IOPermute (STPermute RealWorld) deriving Eq
 
 newIOPermute :: Int -> IO (IOPermute)
 newIOPermute n = liftM IOPermute $ stToIO (newSTPermute n)

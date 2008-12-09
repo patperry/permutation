@@ -108,3 +108,6 @@ unsafeThawSTPermute :: Permute -> ST s (STPermute s)
 unsafeThawSTPermute (Permute arr) =
     (liftM STPermute . ArrST.unsafeThaw) arr
 {-# INLINE unsafeThawSTPermute #-}
+
+instance Eq (STPermute s) where
+    (==) (STPermute marr1) (STPermute marr2) = ArrST.sameSTIntArray marr1 marr2
