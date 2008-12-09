@@ -1,5 +1,5 @@
 name:            permutation
-version:         0.2.1
+version:         0.3
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        A library for representing and applying permutations.
 description:
