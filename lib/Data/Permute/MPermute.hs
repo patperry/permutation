@@ -161,11 +161,11 @@ newCopyPermute p = do
     n  <- getSize p
     p' <- newPermute_ n
     copyPermute p' p
-    return $! p'
+    return p'
 {-# INLINE newCopyPermute #-}
 
 -- | @copyPermute dst src@ copies the elements of the permutation @src@
--- into the permtuation @dst@.  The two permutations must have the same
+-- into the permutation @dst@.  The two permutations must have the same
 -- size.
 copyPermute :: (MPermute p m) => p -> p -> m ()
 copyPermute dst src =
