@@ -70,7 +70,7 @@ newSTPermute :: Int -> ST s (STPermute s)
 newSTPermute n = do
     p@(STPermute marr) <- newSTPermute_ n
     ArrST.writeElems marr [0 .. n-1]
-    return $! p
+    return p
 {-# INLINE newSTPermute #-}
 
 newSTPermute_ :: Int -> ST s (STPermute s)
