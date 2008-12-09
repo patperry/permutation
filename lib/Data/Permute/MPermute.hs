@@ -243,7 +243,7 @@ getInverse p = do
     n <- getSize p
     q <- newPermute_ n
     copyInverse q p
-    return $! q
+    return q
 {-# INLINE getInverse #-}
 
 -- | Set one permutation to be the inverse of another.  
