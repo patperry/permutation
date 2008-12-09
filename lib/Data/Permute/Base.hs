@@ -27,13 +27,13 @@ import qualified Data.IntArray as ArrST
 -- | The immutable permutation data type.
 -- Internally, a permutation of size @n@ is stored as an
 -- @0@-based array of @n@ 'Int's.  The permutation represents a reordering of
--- the integers @0, ..., (n-1)@.  The @i@th element of the array stores
--- the value @p[i]@. 
+-- the integers @0, ..., (n-1)@.  The permutation sents the value p[i] to 
+-- @i@. 
 newtype Permute = Permute IntArray
 
-unsafeApply :: Permute -> Int -> Int
-unsafeApply (Permute p) i = Arr.unsafeAt p i
-{-# INLINE unsafeApply #-}
+unsafeAt :: Permute -> Int -> Int
+unsafeAt (Permute p) i = Arr.unsafeAt p i
+{-# INLINE unsafeAt #-}
 
 -- | Get the size of the permutation.
 size :: Permute -> Int

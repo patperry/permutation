@@ -19,8 +19,8 @@ module Data.Permute (
     swapsPermute,
 
     -- * Accessing permutation elements
-    apply,
-    unsafeApply,
+    at,
+    unsafeAt,
 
     -- * Permutation properties
     size,
@@ -76,16 +76,16 @@ swapsPermute :: Int -> [(Int,Int)] -> Permute
 swapsPermute n ss = runST $
     unsafeFreeze =<< newSwapsPermute n ss
 
--- | @apply p i@ gets the value of the @i@th element of the permutation
+-- | @at p i@ gets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the
 -- size of the permutation.
-apply :: Permute -> Int -> Int
-apply p i
+at :: Permute -> Int -> Int
+at p i
     | i >= 0 && i < size p = 
-        unsafeApply p i
+        unsafeAt p i
     | otherwise =
         error "Invalid index"
-{-# INLINE apply #-}
+{-# INLINE at #-}
 
 -- | Get the inverse of a permutation
 inverse :: Permute -> Permute

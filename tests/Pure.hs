@@ -38,9 +38,9 @@ prop_elems_swapsPermute (SwapsPermute n ss) =
                    | k == j    = i
                    | otherwise = k
 
-prop_apply       = prop_apply_help apply
-prop_unsafeApply = prop_apply_help unsafeApply
-prop_apply_help a =
+prop_at       = prop_at_help at
+prop_unsafeAt = prop_at_help unsafeAt
+prop_at_help a =
     forAll arbitrary $ \(Index n i) ->
     forAll (Test.permute n) $ \p ->
         a p i == (elems p) !! i
@@ -48,7 +48,7 @@ prop_apply_help a =
 prop_size_inverse (p :: Permute) =
     size (inverse p) == size p
 prop_elems_inverse (p :: Permute) =
-    all (\i -> is' !! (apply p i) == i) [0..(n-1)]
+    all (\i -> is' !! (at p i) == i) [0..(n-1)]
   where
     n   = size p
     is' = elems (inverse p)
@@ -57,13 +57,13 @@ prop_swaps (Nat n) =
     forAll (Test.permute n) $ \p ->
     forAll (vector n) $ \xs ->
         let xs' = applySwaps (swaps p) xs
-        in all (\i -> xs' !! i == xs !! (apply p i)) [0..(n-1)]
+        in all (\i -> xs' !! i == xs !! (at p i)) [0..(n-1)]
 
 prop_invSwaps (Nat n) =
     forAll (Test.permute n) $ \p ->
     forAll (vector n) $ \xs ->
         let xs' = applySwaps (invSwaps p) xs
-        in all (\i -> xs' !! (apply p i) == xs !! i) [0..(n-1)]
+        in all (\i -> xs' !! (at p i) == xs !! i) [0..(n-1)]
 
 prop_swaps_inverse (Nat n) =
     forAll (Test.permute n) $ \p ->
@@ -135,8 +135,8 @@ tests_Permute =
     , ("elems . listPermute"     , mytest prop_elems_listPermute)
     , ("size . swapsPermute"     , mytest prop_size_swapsPermute)
     , ("elems . swapsPermute"    , mytest prop_elems_swapsPermute)
-    , ("apply"                   , mytest prop_apply)
-    , ("unsafeApply"             , mytest prop_unsafeApply)
+    , ("at"                      , mytest prop_at)
+    , ("unsafeAt"                , mytest prop_unsafeAt)
     , ("size . inverse"          , mytest prop_size_inverse)
     , ("elems . inverse"         , mytest prop_elems_inverse)
     , ("swaps"                   , mytest prop_swaps)
