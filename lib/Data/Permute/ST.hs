@@ -24,7 +24,7 @@ import Data.Permute.Base( Permute, STPermute, unsafeFreezeSTPermute )
 import Data.Permute.MPermute
 
 -- | A safe way to create and work with a mutable permutation before returning 
--- an immutable permutation for later perusal. This function avoids copying the 
+-- an immutable one for later perusal. This function avoids copying the 
 -- permutation before returning it - it uses unsafeFreeze internally, but this 
 -- wrapper is a safe interface to that function. 
 runSTPermute :: (forall s. ST s (STPermute s)) -> Permute
