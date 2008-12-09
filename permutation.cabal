@@ -39,6 +39,7 @@ library
                      Data.Permute.ST
                      
     other-modules:   Data.IntArray
+                     Data.Choose.Base
                      Data.Permute.Base
                      Data.Permute.IOBase
 
