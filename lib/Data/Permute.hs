@@ -56,7 +56,7 @@ permute n = runST $
     unsafeFreeze =<< newPermute n
 
 -- | Construct a permutation from a list of elements.  
--- @listPermute n is@ creates a permuation of size @n@ with
+-- @listPermute n is@ creates a permutation of size @n@ with
 -- the @i@th element equal to @is !! i@.  For the permutation to be valid,
 -- the list @is@ must have length @n@ and contain the indices @0..(n-1)@ 
 -- exactly once each.
@@ -65,7 +65,7 @@ listPermute n is = runST $
     unsafeFreeze =<< newListPermute n is
 
 -- | Construct a permutation from a list of swaps.
--- @swapsPermute n ss@ creats a permuation of size @n@ given by a
+-- @swapsPermute n ss@ creats a permutation of size @n@ given by a
 -- sequence of swaps.
 -- If @ss@ is @[(i0,j0), (i1,j1), ..., (ik,jk)]@, the
 -- sequence of swaps is
