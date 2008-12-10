@@ -33,7 +33,7 @@ extra-source-files:  examples/Enumerate.hs
 
 library
     hs-source-dirs:  lib
-    exposed-modules: 
+    exposed-modules: Data.Choose
                      Data.Choose.MChoose
                      Data.Choose.IO
                      Data.Choose.ST
