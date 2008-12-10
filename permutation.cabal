@@ -33,13 +33,18 @@ extra-source-files:  examples/Enumerate.hs
 
 library
     hs-source-dirs:  lib
-    exposed-modules: Data.Permute
+    exposed-modules: 
+                     Data.Choose.MChoose
+                     Data.Choose.IO
+                     Data.Choose.ST
+                     Data.Permute
                      Data.Permute.MPermute
                      Data.Permute.IO
                      Data.Permute.ST
                      
     other-modules:   Data.IntArray
                      Data.Choose.Base
+                     Data.Choose.IOBase
                      Data.Permute.Base
                      Data.Permute.IOBase
 
