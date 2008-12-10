@@ -100,7 +100,7 @@ next :: Permute -> Maybe Permute
 next = nextPrevHelp setNext
 
 -- | Return the previous permutation in lexicographic order, or @Nothing@
--- if there is no such permutation.
+-- if no such permutation exists.
 prev :: Permute -> Maybe Permute
 prev = nextPrevHelp setPrev
 

@@ -15,8 +15,7 @@ import Control.Monad
 import Control.Monad.ST
 import Data.Choose.Base
 
--- | A mutable combination that can be manipulated in the 'IO' monad. The
--- type argument @s@ is the state variable argument for the 'IO' type.
+-- | A mutable combination that can be manipulated in the 'IO' monad.
 newtype IOChoose = IOChoose (STChoose RealWorld) deriving Eq
 
 newIOChoose :: Int -> Int -> IO (IOChoose)

@@ -29,6 +29,7 @@ module Data.Choose.MChoose (
     setElem,
     
     -- * Combination properties
+    getPossible,
     getSize,
     getElems,
     setElems,
@@ -189,7 +190,7 @@ getComplement c = do
 -- | Return a lazy list of the elements in the complement of a combination.
 -- If the combination is a subset of @k@ outcomes from @n@ possibilities, then
 -- the returned list will be sorted and of length @n-k@.  
--- Due to the laziness, you should be care when using this function if you
+-- Due to the laziness, you should be careful when using this function if you
 -- are also modifying the combination.
 getComplElems :: (MChoose c m) => c -> m [Int]
 getComplElems c = do
