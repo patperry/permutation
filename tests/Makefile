@@ -13,4 +13,5 @@ clean:
 	find ../lib . -name '*.o'  | xargs rm -f
 	find . -name '*.html' | xargs rm -f
 	rm -f test-permutation test-permutation.tix
+	rm -rf .hpc
 	
