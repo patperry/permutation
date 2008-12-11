@@ -181,7 +181,7 @@ getComplement c = do
     k <- getSize c
     d <- newChoose_ n (n-k)
     setElems d =<< getComplElems c
-    return d
+    return $! d
 {-# INLINE getComplement #-}
 
 -- | Return a lazy list of the elements in the complement of a combination.
