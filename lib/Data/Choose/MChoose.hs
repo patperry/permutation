@@ -56,7 +56,6 @@ module Data.Choose.MChoose (
 
 import Control.Monad
 import Control.Monad.ST
-import System.IO.Unsafe( unsafeInterleaveIO )
 
 import Data.Choose.Base
 import Data.Choose.IOBase
@@ -94,8 +93,6 @@ class (Monad m) => MChoose c m | c -> m, m -> c where
 
     unsafeFreeze :: c -> m Choose
     unsafeThaw :: Choose -> m c
-    
-    unsafeInterleaveM :: m a -> m a
     
         
 -- | Construct a combination from a list of elements.  
@@ -198,7 +195,6 @@ getComplElems c = do
     is <- getElems c
     return $ go n is 0
   where
-    go n _      j | j == n    = []
     go n []     j             = [j .. n-1]
     go n (i:is) j | j == i    = go n is (j+1)
                   | otherwise = [j .. i-1] ++ go n is (i+1)
@@ -307,8 +303,6 @@ instance MChoose (STChoose s) (ST s) where
     {-# INLINE unsafeFreeze #-}
     unsafeThaw = unsafeThawSTChoose
     {-# INLINE unsafeThaw #-}
-    unsafeInterleaveM = unsafeInterleaveST
-    {-# INLINE unsafeInterleaveM #-}
 
 instance MChoose IOChoose IO where
     getPossible = getPossibleIOChoose
@@ -331,5 +325,3 @@ instance MChoose IOChoose IO where
     {-# INLINE unsafeFreeze #-}
     unsafeThaw = unsafeThawIOChoose
     {-# INLINE unsafeThaw #-}
-    unsafeInterleaveM = unsafeInterleaveIO
-    {-# INLINE unsafeInterleaveM #-}
