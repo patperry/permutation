@@ -10,6 +10,7 @@
 module Driver (
     Natural(..),
     Index(..),
+    ListChoose(..),    
     ListPermute(..),
     SwapsPermute(..),
     Sort(..),
@@ -49,6 +50,19 @@ instance Arbitrary Index where
         return $ Index (n + 1) i
 
     coarbitrary = undefined
+
+data ListChoose = ListChoose Int Int [Int] deriving (Eq,Show)
+instance Arbitrary ListChoose where
+    arbitrary = do
+        (Nat n) <- arbitrary
+        k <- choose (0,n)
+        
+        xs <- vector n :: Gen [Int]
+        return . ListChoose n k $ 
+            sort $ take k $ (snd . unzip) $ sortBy (comparing fst) $ zip xs [0..]
+
+    coarbitrary = undefined
+
 
 data ListPermute = ListPermute Int [Int] deriving (Eq,Show)
 instance Arbitrary ListPermute where

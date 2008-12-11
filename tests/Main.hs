@@ -4,7 +4,9 @@ import System.Environment
 import Text.Printf
 
 import Driver
+import Choose
 import Permute
+import STChoose
 import STPermute
 
 main :: IO ()
@@ -36,9 +38,12 @@ main = do
     when (not . and $ smokeResults ++ results) $ fail "\nNot all tests passed!"
  where
 
-    smoke = [ ("STPermute", smoke_STPermute) 
+    smoke = [ ("STChoose" , smoke_STChoose) 
+            , ("STPermute", smoke_STPermute) 
             ]
 
-    tests = [ ("Permute"   , tests_Permute)
+    tests = [ ("STChoose"  , tests_Choose)
+            , ("STChoose"  , tests_STChoose)
+            , ("Permute"   , tests_Permute)
             , ("STPermute" , tests_STPermute)
             ]

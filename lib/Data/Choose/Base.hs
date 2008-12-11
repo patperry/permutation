@@ -94,8 +94,8 @@ newSTChoose n k = do
 
 newSTChoose_ :: Int -> Int -> ST s (STChoose s)
 newSTChoose_ n k = do
-    when (n < 0)           $ fail "invalid number of possibilities"
-    when (k < 0 || k >= n) $ fail "invalid outcome size"
+    when (n < 0)          $ fail "invalid number of possibilities"
+    when (k < 0 || k > n) $ fail "invalid outcome size"
     liftM (STChoose n) $ ArrST.newArray_ k
 {-# INLINE newSTChoose_ #-}
 
