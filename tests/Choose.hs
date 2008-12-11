@@ -18,12 +18,12 @@ import Test.Choose()
 import qualified Test.Choose as Test
 
 
-{-
-prop_size_choose (Nat n) =
-    size (choose n) == n
-prop_elems_choose (Nat n) =
-    elems (choose n) == [0..(n-1)]
--}
+prop_possible_choose (Index n' k) = let n = n'-1 in
+    possible (choose n k) == n
+prop_size_choose (Index n' k) = let n = n'-1 in
+    size (choose n k) == k
+prop_elems_choose (Index n' k) = let n = n'-1 in
+    elems (choose n k) == [0 .. k-1]
 
 prop_possible_listChoose (ListChoose n k is) =
     possible (listChoose n k is) == n
@@ -40,15 +40,15 @@ prop_at_help a =
     forAll (Test.choose (nk+k) k) $ \c ->
         a c i == (elems c) !! i
 
-{-
-prop_size_inverse (p :: Choose) =
-    size (inverse p) == size p
-prop_elems_inverse (p :: Choose) =
-    all (\i -> is' !! (at p i) == i) [0..(n-1)]
+prop_possible_complement (c :: Choose) =
+    possible (complement c) == possible c
+prop_size_complement (c :: Choose) =
+    size (complement c) == possible c - size c
+prop_elems_complement (c :: Choose) =
+    all (not . (`elem` is)) is'
   where
-    n   = size p
-    is' = elems (inverse p)
--}
+    is  = elems c
+    is' = elems (complement c)
 
 prop_prev_choose (Index n1 k) = let n = n1-1 in
     prev (choose n k) == Nothing
@@ -72,15 +72,17 @@ prop_prev_next (c :: Choose) =
     k = size c
 
 tests_Choose = 
-    [ --("size . choose"          , mytest prop_size_choose)
-    -- , ("elems . choose"         , mytest prop_elems_choose)
-     ("possible . listChoose"      , mytest prop_possible_listChoose)
+    [ ("possible . choose"      , mytest prop_possible_choose)
+    , ("size . choose"          , mytest prop_size_choose)
+    , ("elems . choose"         , mytest prop_elems_choose)
+    , ("possible . listChoose"  , mytest prop_possible_listChoose)
     , ("size . listChoose"      , mytest prop_size_listChoose)
     , ("elems . listChoose"     , mytest prop_elems_listChoose)
     , ("at"                     , mytest prop_at)
     , ("unsafeAt"               , mytest prop_unsafeAt)
-    -- , ("size . complement"      , mytest prop_size_complement)
-    -- , ("elems . complement"     , mytest prop_elems_complement)
+    , ("possible . complement"  , mytest prop_possible_complement)
+    , ("size . complement"      , mytest prop_size_complement)
+    , ("elems . complement"     , mytest prop_elems_complement)
     , ("prev . choose"          , mytest prop_prev_choose)
     , ("next (last choose)"     , mytest prop_next_last)
     , ("next . prev"            , mytest prop_next_prev)
