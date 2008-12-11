@@ -212,11 +212,10 @@ setNext :: (MChoose c m) => c -> m Bool
 setNext c = do
     n <- getPossible c
     k <- getSize c
-    if k > 1
+    if k > 0
         then do
-            findIncrement (k-1) (n-k-1) >>=
-                maybe (return False) (\i -> do
-                    i' <- unsafeGetElem c i
+            findIncrement (k-1) (n-1) >>=
+                maybe (return False) (\(i,i') -> do
                     unsafeSetElem c i (i'+1)
                     setAscending k (i+1) (i'+2)
                     return True
@@ -226,7 +225,7 @@ setNext c = do
   where
     findIncrement i m = do
         i' <- unsafeGetElem c i
-        if i' /= m then return (Just i) else recurse
+        if i' /= m then return (Just (i,i')) else recurse
       where
         recurse = if i /= 0 then findIncrement (i-1) (m-1) else return Nothing 
 
@@ -243,7 +242,7 @@ setPrev :: (MChoose c m) => c -> m Bool
 setPrev c = do
     n <- getPossible c
     k <- getSize c
-    if k > 1
+    if k > 0
         then do
             k1' <- unsafeGetElem c (k-1)
             findGap (k-1) k1' >>=
@@ -258,14 +257,14 @@ setPrev c = do
     findGap i i' 
         | i == 0 = 
             if i' == 0 
-                then return $ Just (0,0) 
-                else return $ Nothing
+                then return $ Nothing
+                else return $ Just (0,i') 
 
         | otherwise = let j = i-1 in do
             j' <- unsafeGetElem c j
-            if i' == j'+1 
-                then findGap j j' 
-                else return $ Just (i,i')
+            if i' /= j'+1 
+                then return $ Just (i,i')
+                else findGap j j' 
 
 
     setAscending k i x | i == k = return ()
