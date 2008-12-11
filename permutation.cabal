@@ -27,8 +27,8 @@ extra-source-files:  examples/Enumerate.hs
                      tests/Test/Permute.hs
                      tests/Driver.hs
                      tests/Main.hs
-                     tests/Pure.hs
-                     tests/ST.hs
+                     tests/Permute.hs
+                     tests/STPermute.hs
                      tests/Makefile
 
 library

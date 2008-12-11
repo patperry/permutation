@@ -4,8 +4,8 @@ import System.Environment
 import Text.Printf
 
 import Driver
-import Pure
-import ST
+import Permute
+import STPermute
 
 main :: IO ()
 main = do

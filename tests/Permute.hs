@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fglasgow-exts #-}
-module Pure (
+module Permute (
     tests_Permute
     ) where
     

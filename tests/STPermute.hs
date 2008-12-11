@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types #-}
-module ST (
+module STPermute (
     tests_STPermute,
     smoke_STPermute
     ) where
