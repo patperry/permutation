@@ -13,6 +13,7 @@ module Driver (
     ListChoose(..),    
     ListPermute(..),
     SwapsPermute(..),
+    CyclesPermute(..),
     Sort(..),
     SortBy(..),
     Swap(..),
@@ -89,6 +90,43 @@ swap n = do
     i <- choose (0,n-1)
     j <- choose (0,n-1)
     return (i,j)
+
+data CyclesPermute = CyclesPermute Int [[Int]] deriving (Eq,Show)
+instance Arbitrary CyclesPermute where
+    arbitrary = do
+        (Nat n) <- arbitrary
+        cs <- exhaust randomCycle null [0..n]
+        cs' <- cutSomeSingletons cs
+        return $ CyclesPermute (n+1) cs'
+
+    coarbitrary = undefined
+
+exhaust :: Monad m => (a -> m (b, a)) -> (a -> Bool) -> a -> m [b]
+exhaust _ p x | p x = return []
+exhaust f p x = do
+    (r, y) <- f x
+    rs <- exhaust f p y
+    return (r:rs)
+
+cutSomeSingletons [] = return []
+cutSomeSingletons ([x]:xs) = do
+    is <- elements [True, False]
+    if is
+        then liftM ([x]:) $ cutSomeSingletons xs
+        else cutSomeSingletons xs
+cutSomeSingletons (x:xs) = liftM (x:) $ cutSomeSingletons xs
+
+randomCycle xs = do
+    first <- elements xs
+    complete first (xs \\ [first])
+  where
+    complete first rest = do
+        next <- elements (first:rest)
+        if next == first
+            then return ([first], rest)
+            else do
+                (more, leftover) <- complete first (rest \\ [next])
+                return ((next:more), leftover)
 
 
 data Swap = Swap Int Int Int deriving (Eq,Show)

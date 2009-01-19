@@ -33,6 +33,11 @@ prop_NewSwapsPermute (SwapsPermute n ss) =
 prop_UnsafeNewSwapsPermute (SwapsPermute n ss) =
     unsafeNewSwapsPermute n ss `equivalent` newSwapsPermute_S n ss
 
+newCyclesPermute_S n cs = cyclesPermute n cs
+prop_NewCyclesPermute (CyclesPermute n cs) =
+    newCyclesPermute n cs `equivalent` newCyclesPermute_S n cs
+prop_UnsafeNewCyclesPermute (CyclesPermute n cs) =
+    unsafeNewCyclesPermute n cs `equivalent` newCyclesPermute_S n cs
 
 
 newCopyPermute_S p = (p, p)
@@ -112,6 +117,8 @@ tests_STPermute =
     , ("newListPermute"           , mytest prop_NewListPermute)
     , ("newSwapsPermute"          , mytest prop_NewSwapsPermute)
     , ("unsafeNewSwapsPermute"    , mytest prop_UnsafeNewSwapsPermute)
+    , ("newCyclesPermute"         , mytest prop_NewCyclesPermute)
+    , ("unsafeNewCyclesPermute"   , mytest prop_UnsafeNewCyclesPermute)
     , ("newCopyPermute"           , mytest prop_NewCopyPermute)
     , ("copyPermute"              , mytest prop_CopyPermute)
     , ("setIdentity"              , mytest prop_SetIdentity)
