@@ -355,43 +355,24 @@ setNextBy cmp p = do
 -- then @i1 \<-> j1@, and so on until @ik \<-> jk@.  The laziness makes this
 -- function slightly dangerous if you are modifying the permutation.
 getSwaps :: (MPermute p m) => p -> m [(Int,Int)]
-getSwaps = getSwapsHelp False
+getSwaps = getSwapsHelp overlapping_pairs
+  where
+    overlapping_pairs []           = []
+    overlapping_pairs [_]          = []
+    overlapping_pairs (x:xs@(y:_)) = (x,y) : overlapping_pairs xs
 {-# INLINE getSwaps #-}
 
 -- | Get a lazy list of swaps equivalent to the inverse of a permutation.
 getInvSwaps :: (MPermute p m) => p -> m [(Int,Int)]
-getInvSwaps = getSwapsHelp True
+getInvSwaps = getSwapsHelp pairs_withstart
+  where
+    pairs_withstart []     = error "Empty cycle"
+    pairs_withstart (x:xs) = [(x,y) | y <- xs]
 {-# INLINE getInvSwaps #-}
 
-getSwapsHelp :: (MPermute p m) => Bool -> p -> m [(Int,Int)]
-getSwapsHelp inv p = do
-    n <- getSize p
-    liftM concat $ go n 0
-  where
-    go n i | i == n    = return []
-           | otherwise = unsafeInterleaveM $ do
-        i'    <- unsafeGetElem p i
-        least <- isLeast i i'
-        c     <- if least 
-                     then doCycle i i i'
-                     else return []
-        cs    <- go n (i+1)
-        return (c:cs)
-      
-    isLeast i k 
-        | k > i = do
-            k' <- unsafeGetElem p k
-            isLeast i k'
-        | k < i     = return False
-        | otherwise = return True
-        
-    doCycle start i i'
-        | i' == start = return []
-        | otherwise = unsafeInterleaveM $ do
-            i'' <- unsafeGetElem p i'
-            let s = if inv then (start,i') else (i,i')
-            ss <- doCycle start i' i''
-            return (s:ss)
+getSwapsHelp :: (MPermute p m) => ([Int] -> [(Int, Int)]) -> p -> m [(Int,Int)]
+getSwapsHelp swapgen p = do
+    liftM (concatMap swapgen) $ getCycles p
 {-# INLINE getSwapsHelp #-}
 
 -- | @getCycleFrom p i@ gets the list of elements reachable from @i@
@@ -400,7 +381,7 @@ getCycleFrom :: (MPermute p m) => p -> Int -> m [Int]
 getCycleFrom p i =
     liftM (i:) $ go i
   where
-    go j = do
+    go j = unsafeInterleaveM $ do
         next <- unsafeGetElem p j
         if next == i
             then return []
@@ -411,13 +392,18 @@ getCycleFrom p i =
 getCycles :: (MPermute p m) => p -> m [[Int]]
 getCycles p = do
     n <- getSize p
-    liftM (filter $ not . null) $ mapM maybeCycleFrom [0 .. n-1]
+    go n 0
   where
-    maybeCycleFrom i = do
+
+    go n i | i == n    = return []
+           | otherwise = unsafeInterleaveM $ do
         least <- isLeast i i
         if least
-            then getCycleFrom p i
-            else return []
+            then do
+                cycle <- getCycleFrom p i
+                liftM (cycle:) $ go n (i+1)
+            else go n (i+1)
+
     isLeast i j = do
         k <- unsafeGetElem p j
         case compare i k of
@@ -429,15 +415,13 @@ getCycles p = do
 -- | Whether or not the permutation is made from an even number of swaps
 getIsEven :: (MPermute p m) => p -> m Bool
 getIsEven p = do
-    cycles <- getCycles p
-    let swaps = sum [length c - 1 | c <- cycles]
-    return $ even swaps
+    liftM (even . length) $ getSwaps p
 
 -- | @getPeriod p@ - The first power of @p@ that is the identity permutation
 getPeriod :: (MPermute p m) => p -> m Integer
 getPeriod p = do
     cycles <- getCycles p
-    let lengths = map (toInteger . length) cycles
+    let lengths = map List.genericLength cycles
     return $ List.foldl' lcm 1 lengths
 
 -- | Convert a mutable permutation to an immutable one.
