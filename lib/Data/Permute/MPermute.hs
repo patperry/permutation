@@ -400,8 +400,8 @@ getCycles p = do
         least <- isLeast i i
         if least
             then do
-                cycle <- getCycleFrom p i
-                liftM (cycle:) $ go n (i+1)
+                c <- getCycleFrom p i
+                liftM (c:) $ go n (i+1)
             else go n (i+1)
 
     isLeast i j = do
