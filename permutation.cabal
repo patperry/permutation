@@ -23,7 +23,7 @@ license-file:    LICENSE
 copyright:       (c) 2008. Patrick Perry <patperry@stanford.edu>
 author:          Patrick Perry
 maintainer:      Patrick Perry <patperry@stanford.edu>
-cabal-version: >= 1.2.0
+cabal-version: >= 1.2.3
 build-type:      Custom
 tested-with:     GHC ==6.8.2, GHC ==6.10.1
 
