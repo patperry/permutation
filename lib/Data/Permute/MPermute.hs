@@ -21,6 +21,7 @@ module Data.Permute.MPermute (
     newPermute_,
     newListPermute,
     newSwapsPermute,
+    newCyclesPermute,
     newCopyPermute,
     copyPermute,
     setIdentity,
@@ -35,6 +36,8 @@ module Data.Permute.MPermute (
     getElems,
     setElems,
     isValid,
+    getIsEven,
+    getPeriod,
 
     -- * Permutation functions
     getInverse,
@@ -45,6 +48,8 @@ module Data.Permute.MPermute (
     -- * Applying permutations
     getSwaps,
     getInvSwaps,
+    getCycleFrom,
+    getCycles,
     
     -- * Sorting
     getSort,
@@ -63,6 +68,7 @@ module Data.Permute.MPermute (
     -- * Unsafe operations
     unsafeNewListPermute,
     unsafeNewSwapsPermute,
+    unsafeNewCyclesPermute,
     unsafeGetElem,
     unsafeSetElem,
     unsafeSwapElems,
@@ -154,6 +160,24 @@ newSwapsPermuteHelp swap n ss = do
     mapM_ (uncurry $ swap p) ss
     return p
 {-# INLINE newSwapsPermuteHelp #-}
+
+-- | Construct a permutation from a list of disjoint cycles.
+-- @newCyclesPermute n cs@ creates a permutation of size @n@ which is the
+-- composition of the cycles @cs@.
+newCyclesPermute :: (MPermute p m) => Int -> [[Int]] -> m p
+newCyclesPermute n cs =
+    newSwapsPermute n $ concatMap cycleToSwaps cs
+{-# INLINE newCyclesPermute #-}
+
+unsafeNewCyclesPermute :: (MPermute p m) => Int -> [[Int]] -> m p
+unsafeNewCyclesPermute n cs =
+    unsafeNewSwapsPermute n $ concatMap cycleToSwaps cs
+{-# INLINE unsafeNewCyclesPermute #-}
+
+cycleToSwaps :: [Int] -> [(Int, Int)]
+cycleToSwaps [] = error "Empty cycle"
+cycleToSwaps (i:is) = [(i,j) | j <- reverse is]
+{-# INLINE cycleToSwaps #-}
 
 -- | Construct a new permutation by copying another.
 newCopyPermute :: (MPermute p m) => p -> m p
@@ -369,6 +393,52 @@ getSwapsHelp inv p = do
             ss <- doCycle start i' i''
             return (s:ss)
 {-# INLINE getSwapsHelp #-}
+
+-- | @getCycleFrom p i@ gets the list of elements reachable from @i@
+-- by repeated application of @p@.
+getCycleFrom :: (MPermute p m) => p -> Int -> m [Int]
+getCycleFrom p i =
+    liftM (i:) $ go i
+  where
+    go j = do
+        next <- unsafeGetElem p j
+        if next == i
+            then return []
+            else liftM (next:) $ go next
+{-# INLINE getCycleFrom #-}
+
+-- | @getCycles p@ returns the list of disjoin cycles in @p@.
+getCycles :: (MPermute p m) => p -> m [[Int]]
+getCycles p = do
+    n <- getSize p
+    liftM (filter $ not . null) $ mapM maybeCycleFrom [0 .. n-1]
+  where
+    maybeCycleFrom i = do
+        least <- isLeast i i
+        if least
+            then getCycleFrom p i
+            else return []
+    isLeast i j = do
+        k <- unsafeGetElem p j
+        case compare i k of
+            LT -> isLeast i k
+            EQ -> return True
+            GT -> return False
+{-# INLINE getCycles #-}
+
+-- | Whether or not the permutation is made from an even number of swaps
+getIsEven :: (MPermute p m) => p -> m Bool
+getIsEven p = do
+    cycles <- getCycles p
+    let swaps = sum [length c - 1 | c <- cycles]
+    return $ even swaps
+
+-- | @getPeriod p@ - The first power of @p@ that is the identity permutation
+getPeriod :: (MPermute p m) => p -> m Integer
+getPeriod p = do
+    cycles <- getCycles p
+    let lengths = map (toInteger . length) cycles
+    return $ List.foldl' lcm 1 lengths
 
 -- | Convert a mutable permutation to an immutable one.
 freeze :: (MPermute p m) => p -> m Permute
