@@ -1,5 +1,5 @@
 name:            permutation
-version:         0.3
+version:         0.4
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        A library for permutations and combinations.
 description:
@@ -37,6 +37,7 @@ extra-source-files:  examples/Enumerate.hs
                      tests/Permute.hs
                      tests/STPermute.hs
                      tests/Makefile
+                     NEWS
 
 library
     hs-source-dirs:  lib
