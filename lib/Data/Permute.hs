@@ -22,6 +22,7 @@ module Data.Permute (
     -- * Accessing permutation elements
     at,
     unsafeAt,
+    indexOf,
 
     -- * Permutation properties
     size,
@@ -99,7 +100,12 @@ at p i
         error "Invalid index"
 {-# INLINE at #-}
 
--- | Get the inverse of a permutation
+-- | @indexOf p x@ gets an index @i@ such that @at p i@ equals @x@.
+indexOf :: Permute -> Int -> Int
+indexOf p x = runST $ flip getIndexOf x =<< unsafeThaw p
+{-# INLINE indexOf #-}
+
+-- | Get the inverse of a permutation.
 inverse :: Permute -> Permute
 inverse p = runST $ 
     unsafeFreeze =<< getInverse =<< unsafeThaw p

@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, 
+{-# LANGUAGE BangPatterns, MultiParamTypeClasses, FunctionalDependencies, 
         FlexibleContexts #-}
 -----------------------------------------------------------------------------
 -- |
@@ -29,6 +29,7 @@ module Data.Permute.MPermute (
     -- * Accessing permutation elements
     getElem,
     setElem,
+    getIndexOf,
     swapElems,
     
     -- * Permutation properties
@@ -212,6 +213,17 @@ getElem p i = do
     when (i < 0 || i >= n) $ fail "getElem: invalid index"
     unsafeGetElem p i
 {-# INLINE getElem #-}
+
+-- | @getIndexOf p x@ returns @i@ sutch that @getElem p i@ equals @x@.  This
+-- is a linear-time operation.
+getIndexOf :: (MPermute p m) => p -> Int -> m Int
+getIndexOf p x = 
+    let go !i (y:ys) | y == x    = i
+                     | otherwise = go (i+1) ys
+        go _ _ = error "getIndexOf: invalid element"
+    in 
+        liftM (go 0) $ getElems p
+{-# INLINE getIndexOf #-}
 
 -- | @setElem p i x@ sets the value of the @i@th element of the permutation
 -- @p@.  The index @i@ must be in the range @0..(n-1)@, where @n@ is the

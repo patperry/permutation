@@ -1,5 +1,5 @@
 name:            permutation
-version:         0.4
+version:         0.4.1
 homepage:        http://stat.stanford.edu/~patperry/code/permutation
 synopsis:        A library for permutations and combinations.
 description:
@@ -57,8 +57,13 @@ library
                      Data.Permute.IOBase
 
     build-depends:   base
-    extensions:      MultiParamTypeClasses, FunctionalDependencies, 
-                     FlexibleContexts, Rank2Types, MagicHash, UnboxedTuples
+    extensions:      BangPatterns, 
+                     FlexibleContexts,
+                     FunctionalDependencies, 
+                     MagicHash,
+                     MultiParamTypeClasses, 
+                     Rank2Types,
+                     UnboxedTuples
 
     ghc-options:     -Wall
 

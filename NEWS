@@ -1,3 +1,7 @@
+Changes in 0.4.1:
+
+* added indexOf/getIndexOf
+
 Changes in 0.4:
 
 * Amir Livne Bar-on implemented cycle-related functions

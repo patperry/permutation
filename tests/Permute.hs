@@ -55,6 +55,10 @@ prop_at_help a =
     forAll arbitrary $ \(Index n i) ->
     forAll (Test.permute n) $ \p ->
         a p i == (elems p) !! i
+prop_indexOf =
+    forAll arbitrary $ \(Index n x) ->
+    forAll (Test.permute n) $ \p ->
+        at p (indexOf p x) == x
 
 prop_size_inverse (p :: Permute) =
     size (inverse p) == size p
@@ -175,6 +179,7 @@ tests_Permute =
     , ("elems . cyclesPermute"      , mytest prop_elems_cyclesPermute)
     , ("at"                         , mytest prop_at)
     , ("unsafeAt"                   , mytest prop_unsafeAt)
+    , ("indexOf"                    , mytest prop_indexOf)
     , ("size . inverse"             , mytest prop_size_inverse)
     , ("elems . inverse"            , mytest prop_elems_inverse)
     , ("swaps"                      , mytest prop_swaps)
