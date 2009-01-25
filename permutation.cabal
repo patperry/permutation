@@ -1,6 +1,6 @@
 name:            permutation
-version:         0.4.1
-homepage:        http://stat.stanford.edu/~patperry/code/permutation
+version:         0.4.2
+homepage:        http://github.com/patperry/permutation
 synopsis:        A library for permutations and combinations.
 description:
     This library includes data types for storing permutations and
