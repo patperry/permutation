@@ -1,0 +1,8 @@
+*.o
+*.hi
+*.html
+*.tix
+dist
+tests/.hpc
+tests/test-permutation
+
